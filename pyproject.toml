@@ -21,6 +21,7 @@ dependencies = [
     "mcp",
     "pydantic",
     "python-frontmatter",
+    "pyyaml",
     "networkx",
 ]
 
@@ -37,6 +38,7 @@ dev = [
     "pytest",
     "ruff",
     "mypy",
+    "types-pyyaml",
 ]
 
 [build-system]
@@ -53,3 +55,10 @@ target-version = "py312"
 [tool.mypy]
 strict = true
 files = ["src"]
+
+[[tool.mypy.overrides]]
+module = "frontmatter"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

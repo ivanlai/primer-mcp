@@ -27,6 +27,7 @@ A Jira-lite MCP server that enforces planning-first workflows for AI-assisted de
 ## Development workflow
 
 - Always enter plan mode before implementing a new story
+- Every story from ST-002 onward lands with its unit tests in the same PR — acceptance criteria are proven by tests, not deferred to ST-010
 - Tasks must be completable in a single session (~3 files max)
 - Run `verify_task` before marking any task done
 - One PR per task
@@ -41,6 +42,7 @@ Do NOT read or reference `groundwork-mcp` or any similar existing repo. All desi
 mcp                  # MCP server SDK
 pydantic             # schema validation
 python-frontmatter   # markdown + YAML frontmatter parsing
+pyyaml               # direct YAML dumping (custom no-alias dumper, stable key order)
 networkx             # graph traversal and cycle detection
 uv                   # packaging and distribution (dev pinned to Python 3.13, requires-python >=3.12)
 pytest               # unit tests (use tmp_path fixture, no filesystem mocking)
@@ -51,5 +53,5 @@ mypy                 # type checking (dev)
 ## Story status
 
 See `docs/epic-001.md` for the full story list.
-Done: ST-001 — Project scaffolding, uv environment, and packaging.
-Next: ST-002 — Schema and Pydantic models.
+Done: ST-001 (scaffolding), ST-002 (schema and Pydantic models).
+Next: ST-003 — `init_project` tool.

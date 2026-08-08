@@ -11,9 +11,11 @@ import re
 from datetime import UTC, datetime
 from pathlib import Path
 
-from primer_mcp.models import ID_PREFIX, Adr, Epic
+import frontmatter
+
+from primer_mcp.models import ID_PREFIX, Adr, Epic, Spike, Story, Task
 from primer_mcp.project import PRIMER_DIR
-from primer_mcp.storage import dumps_ticket
+from primer_mcp.storage import dumps_ticket, loads_ticket
 
 SUBDIR_FOR_TYPE = {
     "epic": "epics",
@@ -65,6 +67,27 @@ def _bullets(items: list[str], empty: str = "(none)") -> str:
     e.g. ["a", "b"] -> "- a\\n- b". An empty list becomes a single
     placeholder bullet so template sections are never blank."""
     return "\n".join(f"- {item}" for item in items) if items else f"- {empty}"
+
+
+def _checklist(items: list[str], empty: str = "(none)") -> str:
+    # Like _bullets but with markdown checkboxes: "- [ ] item"
+    return "\n".join(f"- [ ] {item}" for item in items) if items else f"- {empty}"
+
+
+def _require_story(primer: Path, story_id: str) -> Path:
+    story_path = primer / "stories" / f"{story_id}.md"
+    if not story_path.is_file():
+        existing = sorted(p.stem for p in (primer / "stories").glob("ST-*.md"))
+        hint = (
+            f"Existing stories: {', '.join(existing)}."
+            if existing
+            else "No stories exist yet — create one with create_story first."
+        )
+        raise GateError(
+            f"Cannot create ticket: story {story_id!r} not found. {hint} "
+            f"Then call create_task or create_spike with a valid story_id."
+        )
+    return story_path
 
 
 def plan_epic(
@@ -159,4 +182,183 @@ def record_adr(
             f"{epic_id} now satisfies the ADR gate — create_story is unlocked "
             "once it lands, or record further ADRs."
         ),
+    ]
+
+
+def create_story(
+    project_dir: Path,
+    epic_id: str,
+    title: str,
+    what: str,
+    acceptance_criteria: list[str] | None = None,
+    definition_of_done: list[str] | None = None,
+) -> list[str]:
+    """Create a Story under an epic. Gate: epic must exist and have at least one ADR."""
+    primer = _primer_dir(project_dir)
+
+    epic_path = primer / "epics" / f"{epic_id}.md"
+    if not epic_path.is_file():
+        existing = sorted(p.stem for p in (primer / "epics").glob("EP-*.md"))
+        hint = (
+            f"Existing epics: {', '.join(existing)}."
+            if existing
+            else "No epics exist yet — create one with plan_epic first."
+        )
+        raise GateError(
+            f"Cannot create story: epic {epic_id!r} not found. {hint} "
+            f"Then call create_story with a valid epic_id."
+        )
+
+    has_adr = any(
+        frontmatter.loads(p.read_text(encoding="utf-8")).metadata.get("epic_id") == epic_id
+        for p in (primer / "adrs").glob("ADR-*.md")
+    )
+    if not has_adr:
+        raise GateError(
+            f"Cannot create story: epic {epic_id} has no ADRs. "
+            f"Record at least one architectural decision first: "
+            f'record_adr(epic_id="{epic_id}", ...)'
+        )
+
+    story_id = next_id(primer, "story")
+    today = datetime.now(tz=UTC).date()
+    ac = acceptance_criteria or []
+    dod = definition_of_done or []
+    story = Story(
+        id=story_id,
+        title=title,
+        created=today,
+        updated=today,
+        epic_id=epic_id,
+        acceptance_criteria=ac,
+        definition_of_done=dod,
+    )
+    body = (
+        f"## Parent Epic\n[[{epic_id}]]\n\n"
+        f"## What\n{what}\n\n"
+        f"## Acceptance Criteria\n{_checklist(ac)}\n\n"
+        f"## Definition of Done\n{_checklist(dod)}\n\n"
+        f"## Dependencies\n- (none)"
+    )
+    path = primer / "stories" / f"{story_id}.md"
+    path.write_text(dumps_ticket(story, body), encoding="utf-8")
+    return [
+        f"Created {story_id}: {title} ({path})",
+        f'Next: create tasks with create_task(story_id="{story_id}", ...).',
+    ]
+
+
+def create_task(
+    project_dir: Path,
+    story_id: str,
+    title: str,
+    what_to_do: str,
+    testable_outcome: str,
+) -> list[str]:
+    """Create a Task under a story. Gate: story must exist."""
+    primer = _primer_dir(project_dir)
+    _require_story(primer, story_id)
+
+    task_id = next_id(primer, "task")
+    today = datetime.now(tz=UTC).date()
+    task = Task(
+        id=task_id,
+        title=title,
+        created=today,
+        updated=today,
+        story_id=story_id,
+        testable_outcome=testable_outcome,
+    )
+    body = (
+        f"## Parent Story\n[[{story_id}]]\n\n"
+        f"## What to do\n{what_to_do}\n\n"
+        f"## Testable Outcome\n{testable_outcome}\n\n"
+        f"## Dependencies\n- (none)\n\n"
+        f"## Completion Notes\n\n\n"
+        f"## Verification Evidence"
+    )
+    path = primer / "tasks" / f"{task_id}.md"
+    path.write_text(dumps_ticket(task, body), encoding="utf-8")
+    return [
+        f"Created {task_id}: {title} ({path})",
+        f'Next: call start_task(task_id="{task_id}") when you begin work.',
+    ]
+
+
+def create_spike(
+    project_dir: Path,
+    story_id: str,
+    title: str,
+    question: str,
+    timebox: str,
+) -> list[str]:
+    """Create a Spike under a story. Gate: story must exist."""
+    primer = _primer_dir(project_dir)
+    _require_story(primer, story_id)
+
+    spike_id = next_id(primer, "spike")
+    today = datetime.now(tz=UTC).date()
+    spike = Spike(
+        id=spike_id,
+        title=title,
+        created=today,
+        updated=today,
+        story_id=story_id,
+        question=question,
+        timebox=timebox,
+    )
+    body = (
+        f"## Parent Story\n[[{story_id}]]\n\n"
+        f"## Question\n{question}\n\n"
+        f"## Timebox\n{timebox}\n\n"
+        f"## Findings"
+    )
+    path = primer / "spikes" / f"{spike_id}.md"
+    path.write_text(dumps_ticket(spike, body), encoding="utf-8")
+    return [
+        f"Created {spike_id}: {title} ({path})",
+        (
+            f"Timebox: {timebox}. When done, call "
+            f'complete_spike(spike_id="{spike_id}", findings="...").'
+        ),
+    ]
+
+
+def start_task(
+    project_dir: Path,
+    task_id: str,
+) -> list[str]:
+    """Transition a task to in-progress. Gate: task must exist and be in todo or blocked."""
+    primer = _primer_dir(project_dir)
+    task_path = primer / "tasks" / f"{task_id}.md"
+    if not task_path.is_file():
+        existing = sorted(p.stem for p in (primer / "tasks").glob("TK-*.md"))
+        hint = (
+            f"Existing tasks: {', '.join(existing)}."
+            if existing
+            else "No tasks exist yet — create one with create_task first."
+        )
+        raise GateError(
+            f"Cannot start task: {task_id!r} not found. {hint}"
+        )
+
+    ticket, body = loads_ticket(task_path.read_text(encoding="utf-8"))
+    assert isinstance(ticket, Task)
+
+    if ticket.status == "in-progress":
+        raise GateError(
+            f"Task {task_id} is already in-progress."
+        )
+    if ticket.status in ("completed", "verified"):
+        raise GateError(
+            f"Cannot start task: {task_id} has status {ticket.status!r} "
+            f"and cannot go back to in-progress."
+        )
+
+    today = datetime.now(tz=UTC).date()
+    updated = ticket.model_copy(update={"status": "in-progress", "updated": today})
+    task_path.write_text(dumps_ticket(updated, body), encoding="utf-8")
+    return [
+        f"Started {task_id}: {ticket.title} (status: in-progress)",
+        f'Next: call complete_task(task_id="{task_id}", notes="...") when done.',
     ]

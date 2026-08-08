@@ -43,6 +43,12 @@ def _primer_dir(project_dir: Path) -> Path:
 
 
 def next_id(primer_dir: Path, ticket_type: str) -> str:
+    """Allocate the next sequential ID for a ticket type by scanning existing
+    files, e.g. tasks/ holding TK-001.md and TK-007.md -> "TK-008".
+
+    Max+1 (not count+1) so deleted tickets never cause ID reuse; zero-padded
+    to three digits but parsed unpadded, so numbering survives past 999.
+    """
     prefix = ID_PREFIX[ticket_type]
     subdir = primer_dir / SUBDIR_FOR_TYPE[ticket_type]
     pattern = re.compile(rf"^{prefix}-(\d+)$")

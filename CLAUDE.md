@@ -42,11 +42,13 @@ mcp                  # MCP server SDK
 pydantic             # schema validation
 python-frontmatter   # markdown + YAML frontmatter parsing
 networkx             # graph traversal and cycle detection
-uv                   # packaging and distribution
+uv                   # packaging and distribution (dev pinned to Python 3.13, requires-python >=3.12)
 pytest               # unit tests (use tmp_path fixture, no filesystem mocking)
+ruff                 # lint + format (dev)
+mypy                 # type checking (dev)
 ```
 
 ## Story status
 
 See `docs/epic-001.md` for the full story list. Implementation has not started.
-Next: ST-001 — Project scaffolding and packaging.
+Next: ST-001 — Project scaffolding, uv environment, and packaging.

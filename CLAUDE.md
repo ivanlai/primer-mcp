@@ -52,5 +52,5 @@ mypy                 # type checking (dev)
 ## Story status
 
 See `docs/epic-001.md` for the full story list.
-Done: ST-001 — Project scaffolding, uv environment, and packaging.
-Next: ST-002 — Schema and Pydantic models.
+Done: ST-001 (scaffolding), ST-002 (schema and Pydantic models).
+Next: ST-003 — `init_project` tool.

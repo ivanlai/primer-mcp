@@ -22,11 +22,11 @@
 
 ## Storage Layout
 
-All primer-mcp data lives in a `.primer/` directory within the user's project:
+All primer-mcp data lives in a `primer/` directory within the user's project — deliberately visible (not dot-hidden) so tickets are browsable on GitHub and in editors. Adopters should commit it (git-native history is a core selling point):
 
 ```
 {project_dir}/
-└── .primer/
+└── primer/
     ├── config.yaml          # project name + optional Jira project key, created by init_project
     ├── epics/
     │   └── EP-001.md

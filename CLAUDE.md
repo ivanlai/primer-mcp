@@ -11,7 +11,7 @@ A Jira-lite MCP server that enforces planning-first workflows for AI-assisted de
 ## Key conventions
 
 - **Language:** Python, packaged with `uv`, distributed via `uvx`
-- **Data store:** Markdown + YAML frontmatter in `.primer/` directory
+- **Data store:** Markdown + YAML frontmatter in `primer/` directory (visible, not dot-hidden; gitignored in THIS repo until the backlog migrates post-ST-005)
 - **No provider-specific code** — server must be MCP-protocol-only, no Anthropic/OpenAI SDK calls
 - **Ticket body templates** are defined in `docs/architecture.md` — follow them exactly when generating ticket files
 - **Graph edges** (`blocks`, `blocked_by`) are base fields on ALL ticket types, not just tasks

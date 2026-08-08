@@ -216,3 +216,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# primer-mcp ticket store — local-only until the backlog migrates from docs/epic-001.md (post ST-005)
+primer/

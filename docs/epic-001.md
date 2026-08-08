@@ -24,8 +24,8 @@ Define and validate all ticket types as Pydantic models.
 
 ### ST-003: `init_project` tool
 Initialise a project directory and configure CLAUDE.md.
-- Creates `.primer/` subdirectories
-- Creates `.primer/config.yaml` with project prefix
+- Creates `primer/` subdirectories
+- Creates `primer/config.yaml` with project name and optional Jira project key
 - Appends `## primer-mcp` section to CLAUDE.md if not already present
 - Idempotent — safe to run multiple times
 - Acceptance: running twice produces identical state to running once
@@ -43,6 +43,7 @@ Implement story and task creation with workflow gating.
 - `create_spike`: requires valid `story_id`, records question and timebox
 - `start_task`: transitions status to `in-progress`
 - Acceptance: all gates enforced with clear error messages
+- Follow-up once this story lands: migrate the remaining backlog from `docs/epic-001.md` into `primer/` using the tools themselves (dogfooding), then remove `primer/` from this repo's .gitignore
 
 ### ST-006: Completion tools — `complete_task`, `verify_task`, `complete_spike`
 Implement two-phase task completion and spike closure.

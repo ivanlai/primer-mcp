@@ -11,13 +11,13 @@ def main() -> None:
         description=(
             "A Jira-lite MCP server that enforces planning-first workflows "
             "for AI-assisted development. Tickets are markdown files in a "
-            ".primer/ directory; the AI agent is the interface."
+            "primer/ directory; the AI agent is the interface."
         ),
     )
     parser.add_argument(
         "--project-dir",
         default=".",
-        help="Project directory containing (or to contain) the .primer/ data store (default: %(default)s)",
+        help="Project directory containing (or to contain) the primer/ data store (default: %(default)s)",
     )
     parser.add_argument(
         "--version",

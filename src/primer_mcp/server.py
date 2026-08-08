@@ -7,14 +7,13 @@ failure message states what failed, why, and the exact next call.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 from mcp.server.mcpserver import MCPServer
 
-from primer_mcp.project import init_project as _init_project
-from primer_mcp.tickets import GateError
-from primer_mcp.tickets import plan_epic as _plan_epic
-from primer_mcp.tickets import record_adr as _record_adr
+from primer_mcp import project, tickets
 
 INSTRUCTIONS = """\
 primer-mcp enforces a planning-first workflow. The hierarchy is
@@ -23,6 +22,15 @@ one recorded ADR before stories can be created, and tasks need a parent
 story. Start a new project with init_project, then plan_epic, then
 record_adr. Gate violations return instructions for the correct next call.
 """
+
+
+def _gated(fn: Callable[..., list[str]], *args: Any) -> str:
+    # Joins the list[str] response and converts GateError to a tool response.
+
+    try:
+        return "\n".join(fn(*args))
+    except tickets.GateError as err:
+        return str(err)
 
 
 def create_server(project_dir: Path) -> MCPServer:
@@ -38,7 +46,7 @@ def create_server(project_dir: Path) -> MCPServer:
         store and adds the workflow section to CLAUDE.md (non-destructive,
         idempotent). Call this once per project, before any other tool.
         Optionally pass jira_project_key if tickets may later be exported to Jira."""
-        return "\n".join(_init_project(project_dir, project_name, jira_project_key))
+        return "\n".join(project.init_project(project_dir, project_name, jira_project_key))
 
     @server.tool(name="plan_epic")
     def plan_epic(
@@ -53,12 +61,10 @@ def create_server(project_dir: Path) -> MCPServer:
         BEFORE writing any code: state why the work matters, its goals, and how
         you'll know it's done. Stories cannot be created until the epic also has
         at least one ADR (record_adr)."""
-        try:
-            return "\n".join(
-                _plan_epic(project_dir, title, why, goals, constraints, non_goals, success_criteria)
-            )
-        except GateError as err:
-            return str(err)
+        return _gated(
+            tickets.plan_epic,
+            project_dir, title, why, goals, constraints, non_goals, success_criteria,
+        )
 
     @server.tool(name="record_adr")
     def record_adr(
@@ -73,11 +79,60 @@ def create_server(project_dir: Path) -> MCPServer:
         forcing a choice, the decision, alternatives rejected (with reasons),
         and consequences accepted. At least one ADR is required per epic before
         create_story will work — decisions come before implementation."""
-        try:
-            return "\n".join(
-                _record_adr(project_dir, epic_id, title, context, decision, alternatives, consequences)
-            )
-        except GateError as err:
-            return str(err)
+        return _gated(
+            tickets.record_adr,
+            project_dir, epic_id, title, context, decision, alternatives, consequences,
+        )
+
+    @server.tool(name="create_story")
+    def create_story(
+        epic_id: str,
+        title: str,
+        what: str,
+        acceptance_criteria: list[str] | None = None,
+        definition_of_done: list[str] | None = None,
+    ) -> str:
+        """Create a Story under an epic — a deliverable with acceptance criteria.
+        Requires the epic to have at least one recorded ADR (architectural
+        decisions come before implementation). If gated, the error tells you
+        what to call instead."""
+        return _gated(
+            tickets.create_story,
+            project_dir, epic_id, title, what, acceptance_criteria, definition_of_done,
+        )
+
+    @server.tool(name="create_task")
+    def create_task(
+        story_id: str,
+        title: str,
+        what_to_do: str,
+        testable_outcome: str,
+    ) -> str:
+        """Create a Task under a story — a concrete unit of implementation work
+        with a testable outcome. The parent story must already exist. After
+        creation, call start_task to begin work."""
+        return _gated(
+            tickets.create_task, project_dir, story_id, title, what_to_do, testable_outcome
+        )
+
+    @server.tool(name="create_spike")
+    def create_spike(
+        story_id: str,
+        title: str,
+        question: str,
+        timebox: str,
+    ) -> str:
+        """Create a Spike under a story — a timeboxed investigation to answer a
+        specific question before committing to an implementation approach. The
+        parent story must already exist. When done, call complete_spike with
+        your findings."""
+        return _gated(tickets.create_spike, project_dir, story_id, title, question, timebox)
+
+    @server.tool(name="start_task")
+    def start_task(task_id: str) -> str:
+        """Transition a task from todo (or blocked) to in-progress — call this
+        when you begin working on a task. The task must exist and not already
+        be completed or verified. After finishing, call complete_task."""
+        return _gated(tickets.start_task, project_dir, task_id)
 
     return server

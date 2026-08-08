@@ -25,6 +25,7 @@ ID_PREFIX = {
 
 
 def _id_pattern(ticket_type: str) -> str:
+    # e.g. _id_pattern("task") -> r"^TK-\d{3,}$"
     return rf"^{ID_PREFIX[ticket_type]}-\d{{3,}}$"
 
 

@@ -50,5 +50,6 @@ mypy                 # type checking (dev)
 
 ## Story status
 
-See `docs/epic-001.md` for the full story list. Implementation has not started.
-Next: ST-001 — Project scaffolding, uv environment, and packaging.
+See `docs/epic-001.md` for the full story list.
+Done: ST-001 — Project scaffolding, uv environment, and packaging.
+Next: ST-002 — Schema and Pydantic models.

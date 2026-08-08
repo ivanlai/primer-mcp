@@ -61,6 +61,9 @@ def next_id(primer_dir: Path, ticket_type: str) -> str:
 
 
 def _bullets(items: list[str], empty: str = "(none)") -> str:
+    """Render items as a markdown bullet list for ticket bodies,
+    e.g. ["a", "b"] -> "- a\\n- b". An empty list becomes a single
+    placeholder bullet so template sections are never blank."""
     return "\n".join(f"- {item}" for item in items) if items else f"- {empty}"
 
 

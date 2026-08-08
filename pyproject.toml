@@ -21,6 +21,7 @@ dependencies = [
     "mcp",
     "pydantic",
     "python-frontmatter",
+    "pyyaml",
     "networkx",
 ]
 

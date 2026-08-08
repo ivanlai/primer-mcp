@@ -81,6 +81,109 @@ timebox: string             # e.g. "2 hours"
 findings: string
 ```
 
+## Ticket Body Templates
+
+Frontmatter carries machine-readable data for the graph and gating logic. The markdown body carries human-readable context so each file is self-contained and readable in isolation.
+
+### Epic body
+```markdown
+## Why
+[Problem being solved and motivation]
+
+## Goals
+[Restate goals narratively]
+
+## Constraints
+[Key constraints and boundaries]
+
+## Non-Goals
+[What this explicitly does not cover]
+
+## Success Criteria
+[How we know this is done]
+
+## Child ADRs
+- [[ADR-001]] — [title]
+
+## Child Stories
+- [[ST-001]] — [title]
+```
+
+### ADR body
+```markdown
+## Parent Epic
+[[EP-001]] — [epic title]
+
+## Context
+[Why this decision is needed — the situation, problem, or constraint forcing a choice]
+
+## Decision
+[What was decided, stated clearly]
+
+## Alternatives Considered
+- **[Option A]** — [why rejected]
+- **[Option B]** — [why rejected]
+
+## Consequences
+[Trade-offs accepted, risks introduced, follow-up actions needed]
+```
+
+### Story body
+```markdown
+## Parent Epic
+[[EP-001]] — [epic title]
+
+## What
+[User story or description of the deliverable]
+
+## Acceptance Criteria
+- [ ] [criterion]
+
+## Definition of Done
+- [ ] [criterion]
+
+## Dependencies
+- Blocked by: [[TK-001]] — [title] — [why it blocks]
+- Blocks: [[ST-003]] — [title] — [why]
+```
+
+### Task body
+```markdown
+## Parent Story
+[[ST-001]] — [story title]
+
+## What to do
+[Specific implementation description]
+
+## Testable Outcome
+[Exact condition that proves this task is complete]
+
+## Dependencies
+- Blocked by: [[TK-002]] — [title] — [why]
+- Blocks: [[TK-004]] — [title] — [why]
+
+## Completion Notes
+[Populated by complete_task]
+
+## Verification Evidence
+[Populated by verify_task — test output, command run, screenshot reference]
+```
+
+### Spike body
+```markdown
+## Parent Story
+[[ST-001]] — [story title]
+
+## Question
+[The specific unknown this spike is investigating]
+
+## Timebox
+[e.g. 2 hours]
+
+## Findings
+[Populated when spike is complete — answer to the question, recommendation]
+```
+
 ## Graph Protocol
 
 Graph edges are first-class citizens — every ticket type participates in the graph. There are two distinct edge types:

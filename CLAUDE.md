@@ -53,5 +53,5 @@ mypy                 # type checking (dev)
 ## Story status
 
 See `docs/epic-001.md` for the full story list.
-Done: ST-001 (scaffolding), ST-002 (schema and Pydantic models).
-Next: ST-003 — `init_project` tool.
+Done: ST-001 (scaffolding), ST-002 (schema/models), ST-003 (`init_project`).
+Next: ST-004 — planning tools `plan_epic`, `record_adr`.

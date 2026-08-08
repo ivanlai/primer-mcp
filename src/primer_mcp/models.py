@@ -13,9 +13,24 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+# Ticket ID prefix per type. Single source of truth: the per-model ID
+# patterns below and (from ST-004 on) ID generation both derive from it.
+ID_PREFIX = {
+    "epic": "EP",
+    "adr": "ADR",
+    "story": "ST",
+    "task": "TK",
+    "spike": "SP",  # spike = timeboxed investigation (question/timebox/findings)
+}
+
+
+def _id_pattern(ticket_type: str) -> str:
+    return rf"^{ID_PREFIX[ticket_type]}-\d{{3,}}$"
+
+
 # Any ticket may reference any other ticket in blocks/blocked_by,
 # so edge entries accept every type prefix.
-TICKET_ID_PATTERN = re.compile(r"^(EP|ADR|ST|TK|SP)-\d{3,}$")
+TICKET_ID_PATTERN = re.compile(rf"^({'|'.join(ID_PREFIX.values())})-\d{{3,}}$")
 
 
 class TicketBase(BaseModel):
@@ -45,7 +60,7 @@ class TicketBase(BaseModel):
 
 class Epic(TicketBase):
     type: Literal["epic"] = "epic"
-    id: str = Field(pattern=r"^EP-\d{3,}$")
+    id: str = Field(pattern=_id_pattern("epic"))
     status: Literal["todo", "in-progress", "blocked", "done"] = "todo"
     goals: list[str] = Field(default_factory=list)
     constraints: list[str] = Field(default_factory=list)
@@ -55,10 +70,10 @@ class Epic(TicketBase):
 
 class Adr(TicketBase):
     type: Literal["adr"] = "adr"
-    id: str = Field(pattern=r"^ADR-\d{3,}$")
+    id: str = Field(pattern=_id_pattern("adr"))
     # An ADR records a decision already made — created done, no active lifecycle.
     status: Literal["done"] = "done"
-    epic_id: str = Field(pattern=r"^EP-\d{3,}$")
+    epic_id: str = Field(pattern=_id_pattern("epic"))
     context: str
     decision: str
     alternatives: list[str] = Field(default_factory=list)
@@ -67,19 +82,19 @@ class Adr(TicketBase):
 
 class Story(TicketBase):
     type: Literal["story"] = "story"
-    id: str = Field(pattern=r"^ST-\d{3,}$")
+    id: str = Field(pattern=_id_pattern("story"))
     status: Literal["todo", "in-progress", "blocked", "done"] = "todo"
-    epic_id: str = Field(pattern=r"^EP-\d{3,}$")
+    epic_id: str = Field(pattern=_id_pattern("epic"))
     acceptance_criteria: list[str] = Field(default_factory=list)
     definition_of_done: list[str] = Field(default_factory=list)
 
 
 class Task(TicketBase):
     type: Literal["task"] = "task"
-    id: str = Field(pattern=r"^TK-\d{3,}$")
+    id: str = Field(pattern=_id_pattern("task"))
     # Two-phase completion: complete_task sets "completed", verify_task sets "verified".
     status: Literal["todo", "in-progress", "blocked", "completed", "verified"] = "todo"
-    story_id: str = Field(pattern=r"^ST-\d{3,}$")
+    story_id: str = Field(pattern=_id_pattern("story"))
     testable_outcome: str
     completed_notes: str = ""
     verified_evidence: str = ""
@@ -87,9 +102,9 @@ class Task(TicketBase):
 
 class Spike(TicketBase):
     type: Literal["spike"] = "spike"
-    id: str = Field(pattern=r"^SP-\d{3,}$")
+    id: str = Field(pattern=_id_pattern("spike"))
     status: Literal["todo", "in-progress", "blocked", "done"] = "todo"
-    story_id: str = Field(pattern=r"^ST-\d{3,}$")
+    story_id: str = Field(pattern=_id_pattern("story"))
     question: str
     timebox: str
     findings: str = ""

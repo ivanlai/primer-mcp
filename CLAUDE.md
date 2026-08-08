@@ -54,8 +54,8 @@ mypy                 # type checking (dev)
 ## Story status
 
 See `docs/epic-001.md` for the full story list.
-Done: ST-001 (scaffolding), ST-002 (schema/models), ST-003 (`init_project`), ST-004 (MCP server + `plan_epic`/`record_adr`).
-Next: ST-005 — execution tools `create_story`, `create_task`, `create_spike`, `start_task`.
+Done: ST-001 (scaffolding), ST-002 (schema/models), ST-003 (`init_project`), ST-004 (MCP server + `plan_epic`/`record_adr`), ST-005 (execution tools `create_story`, `create_task`, `create_spike`, `start_task`).
+Next: ST-006 — completion tools `complete_task`, `verify_task`, `complete_spike`.
 
 ## primer-mcp
 

@@ -14,10 +14,10 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # Ticket ID prefix per type. Single source of truth: the per-model ID
-# patterns below and (from ST-004 on) ID generation both derive from it.
+# patterns below and ID generation both derive from it.
 ID_PREFIX = {
     "epic": "EP",
-    "adr": "ADR",   # Architecture Decision Record
+    "adr": "ADR",   # Architecture Decision Record (context/decision/consequences)
     "story": "ST",
     "task": "TK",
     "spike": "SP",  # spike = timeboxed investigation (question/timebox/findings)

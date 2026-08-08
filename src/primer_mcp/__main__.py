@@ -26,7 +26,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    # Server startup lands with the MCP tool implementations (ST-004 onwards).
+    # Server startup lands with the MCP tool implementations.
     parser.exit(
         message=(
             f"primer-mcp {__version__}: server not yet implemented "

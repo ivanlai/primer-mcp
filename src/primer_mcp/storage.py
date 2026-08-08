@@ -1,6 +1,6 @@
 """Serialise tickets to and from markdown with YAML frontmatter.
 
-Directory layout and file I/O land with init_project (ST-003); this module
+Directory layout and file I/O belong to init_project; this module
 only defines the text format so it round-trips cleanly:
 loads_ticket(dumps_ticket(ticket, body)) == (ticket, body) for stripped bodies.
 """

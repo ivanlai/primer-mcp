@@ -76,12 +76,10 @@ Implement the MCP Prompt primitives.
 - Works in any MCP client
 - Acceptance: both prompts are registered and returned correctly by the server
 
-### ST-010: Tests — unit and MCP integration
-Test all business logic independently of the MCP protocol layer, plus one thin integration pass over the protocol layer itself.
-- Schema validation (valid and invalid inputs for each model, per-type status rules)
-- Workflow gating rules (each gate blocks correctly, error messages contain the corrective action)
-- Graph traversal (blockers, blocked-by, cycle detection on dependency edges only, derived story/epic done-ness)
-- State transitions (complete → verify sequence; spike completion)
+### ST-010: Test sweep — coverage gaps and MCP integration
+Stories ST-002 onward land with their own unit tests in their PRs (see CLAUDE.md); this story audits the accumulated suite and completes it.
+- Fill coverage gaps across schema validation, gating rules, graph traversal, and state transitions
+- Cross-cutting cases individual stories may have missed: gate interactions, cycle detection on dependency edges only, derived story/epic done-ness, gate error messages containing the corrective action
 - `export_graph` output (valid HTML, correct node/edge data)
 - MCP integration: tools and prompts registered and callable via the `mcp` SDK's in-memory client
 - Acceptance: all tests pass; no mocking of filesystem (use `tmp_path` fixture)

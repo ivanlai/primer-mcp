@@ -27,6 +27,7 @@ A Jira-lite MCP server that enforces planning-first workflows for AI-assisted de
 ## Development workflow
 
 - Always enter plan mode before implementing a new story
+- Every story from ST-002 onward lands with its unit tests in the same PR — acceptance criteria are proven by tests, not deferred to ST-010
 - Tasks must be completable in a single session (~3 files max)
 - Run `verify_task` before marking any task done
 - One PR per task

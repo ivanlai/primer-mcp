@@ -17,7 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 # patterns below and (from ST-004 on) ID generation both derive from it.
 ID_PREFIX = {
     "epic": "EP",
-    "adr": "ADR",
+    "adr": "ADR",  # adr = Architecture Decision Record (context/decision/consequences)
     "story": "ST",
     "task": "TK",
     "spike": "SP",  # spike = timeboxed investigation (question/timebox/findings)

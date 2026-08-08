@@ -14,15 +14,20 @@
 | CLAUDE.md strategy | Append via `init_project` | Overwrite, manual only | Non-destructive; idempotent; user stays in full control of their file |
 | MCP primitives | Tools + Prompts | Tools only | Prompts scaffold planning conversations and work across all MCP clients |
 | Plan mode | Cannot trigger programmatically | N/A | Client-side Claude Code feature; addressed via CLAUDE.md rules and tool descriptions |
+| Python version | Dev pinned to 3.13 (`.python-version`); `requires-python = ">=3.12"`; CI tests 3.12–3.14 | 3.14 floor, 3.11 floor | 3.13 is the mature stable with full ecosystem wheel coverage; `uvx` downloads a suitable interpreter for users, so the floor barely restricts reach; 3.14 in CI proves forward-compat |
+| Jira interop | Field-mapping doc + `export_jira` prompt + optional `external_ref` field | Jira REST client in the server | Zero new dependencies; any Jira MCP client does the writing; preserves the no-provider-SDK constraint |
+| vis.js delivery | Vendored copy (MIT, ~700KB) bundled in the package | CDN `<script>` tag | "Fully offline" and "no external requests" require it; MIT licence permits redistribution |
+| Gate error style | Actionable, agent-steering messages | Plain refusals | The consumer of every error is an AI agent mid-task; the error text is the steering surface |
+| Priority | No priority field; deterministic ordering | `priority` frontmatter field | Single-user, small projects; topological order + oldest-ID-first is predictable and needs no upkeep |
 
 ## Storage Layout
 
-All primer-mcp data lives in a `.primer/` directory within the user's project:
+All primer-mcp data lives in a `primer/` directory within the user's project — deliberately visible (not dot-hidden) so tickets are browsable on GitHub and in editors. Adopters should commit it (git-native history is a core selling point):
 
 ```
 {project_dir}/
-└── .primer/
-    ├── config.yaml          # project id prefix (e.g. "PROJ"), created by init_project
+└── primer/
+    ├── config.yaml          # project name + optional Jira project key, created by init_project
     ├── epics/
     │   └── EP-001.md
     ├── adrs/
@@ -44,11 +49,13 @@ All ticket types share a common frontmatter base. Type-specific fields are addit
 id: EP-001
 type: epic | adr | story | task | spike
 title: string
-status: todo | in-progress | done | blocked
+status: todo | in-progress | blocked | completed | verified | done
+                  # allowed values vary by type — see Ticket Lifecycle below
 created: ISO8601 date
 updated: ISO8601 date
 blocks: []        # list of ticket IDs this ticket blocks (any type)
 blocked_by: []    # list of ticket IDs blocking this ticket (any type)
+external_ref: {}  # optional, e.g. {jira: PROJ-123} — set after export, makes re-export idempotent
 
 # Epic-specific
 goals: []
@@ -80,6 +87,17 @@ question: string
 timebox: string             # e.g. "2 hours"
 findings: string
 ```
+
+## Ticket Lifecycle
+
+Any type may be `blocked` at any pre-terminal point. Terminal states per type:
+
+- **Epic / Story:** `todo → in-progress → done`. `done` is derived, never set directly: a story is done when all child tasks are `verified` and all child spikes are `done`; an epic is done when all child stories are done. `get_next_action` applies this rule.
+- **ADR:** created as `done` — an ADR records a decision already made. It has no active lifecycle.
+- **Task:** `todo → in-progress → completed → verified`. `complete_task` sets `completed`; `verify_task` requires status `completed` and sets `verified` (terminal). The intermediate `completed` state is what makes the two-phase gate checkable from state alone.
+- **Spike:** `todo → in-progress → done`. `complete_spike` records findings and sets `done`.
+
+There is no `priority` field. `get_next_action` orders work deterministically: unmet workflow gates first, then unblocked tickets in topological order of the dependency graph, oldest ID first.
 
 ## Ticket Body Templates
 
@@ -197,10 +215,12 @@ Graph edges are first-class citizens — every ticket type participates in the g
 - `blocks: [TK-002, ST-003]` — this ticket must be done before those tickets
 - `blocked_by: [EP-001]` — this ticket cannot start until those tickets are done
 
-Both edge types are loaded into a `networkx.DiGraph` at query time. This graph is the source of truth for:
+Both edge types are loaded into a `networkx.DiGraph` at query time (edge type stored as an edge attribute). This graph is the source of truth for:
 - `get_next_action` — finds unblocked, ready tickets
 - `export_graph` — renders the full project as a neo4j-style interactive HTML graph
 - Cycle detection — `networkx` detects circular dependencies on graph load
+
+Cycle detection runs on **dependency edges only**. A child story blocking its parent epic forms a cycle in the combined graph but is semantically fine — hierarchy edges are excluded from the check.
 
 IDs are globally unique across all ticket types (EP-, ADR-, ST-, TK-, SP- prefixes), so any ticket can reference any other ticket in `blocks`/`blocked_by`.
 
@@ -211,16 +231,48 @@ Enforced by the MCP server — these are hard blocks, not warnings:
 1. Cannot call `record_adr` without a valid `epic_id`
 2. Cannot call `create_story` unless the parent epic has at least one ADR
 3. Cannot call `create_task` without a valid `story_id`
-4. Cannot call `verify_task` unless `complete_task` has been called first
+4. Cannot call `verify_task` unless `complete_task` has been called first (task status must be `completed`)
 5. `get_next_action` surfaces the first unmet gate in the project
+
+## Gate Errors Are Agent Steering
+
+The consumer of every error message is an AI agent mid-task, so a gate failure must contain the corrective action, not just the refusal. Every gate error follows the pattern: **what failed → why → the exact next call**. Example:
+
+> `Cannot create story: epic EP-001 has no ADRs. Record at least one architectural decision first: record_adr(epic_id="EP-001", ...)`
+
+Tool descriptions follow the same principle — they are the primary steering surface for agents choosing which tool to call, and are written and reviewed deliberately (see ST-011).
+
+## Graduating to Jira
+
+primer-mcp is for people who dislike Jira — but sometimes the team still needs real Jira tickets. The escape hatch is protocol composition, not a Jira dependency: tickets are self-contained markdown, so any agent that also has a Jira MCP server (e.g. Atlassian's) can read primer-mcp tickets and file the corresponding issues. primer-mcp contributes three things:
+
+1. The field mapping below, so the export is mechanical
+2. An `export_jira` MCP Prompt that scaffolds the export conversation
+3. The optional `external_ref` frontmatter field — the agent records the created issue key there, so re-running the export updates instead of duplicating
+
+| primer-mcp | Jira |
+|------------|------|
+| Epic | Epic |
+| Story | Story |
+| Task | Task (or Sub-task of the story) |
+| Spike | Spike (or Task labelled `spike`) |
+| ADR | No native equivalent — Confluence page or issue labelled `adr`, linked to the Epic |
+| `title` | Summary |
+| markdown body | Description |
+| `acceptance_criteria` | Description checklist (or AC custom field if configured) |
+| `blocks` / `blocked_by` | Native issue links "blocks" / "is blocked by" |
+| `status` | `todo` → To Do, `in-progress` → In Progress, `completed`/`verified`/`done` → Done, `blocked` → flagged |
+
+Jira workflows vary per instance; the `export_jira` prompt instructs the agent to map each status to the nearest available column rather than assuming these exact names.
 
 ## MCP Primitives Used
 
 ### Tools
-All state-changing operations and queries. See `docs/epic-001.md` for the full list.
+All state-changing operations and queries, including read access (`get_ticket`, `list_tickets`) and post-creation edits (`update_ticket`) — agents on clients without filesystem access must be able to work entirely through the server. See `docs/epic-001.md` for the full list.
 
 ### Prompts
-`plan_story` — a reusable conversation template that scaffolds the planning phase before a story is created. Works across all MCP clients, including those without a native plan mode.
+- `plan_story` — a reusable conversation template that scaffolds the planning phase before a story is created. Works across all MCP clients, including those without a native plan mode.
+- `export_jira` — scaffolds the export of primer-mcp tickets to Jira via whatever Jira MCP server the client has available (see "Graduating to Jira").
 
 ### Resources
 Not used in v1. Future: expose ticket files as readable resources for richer client integrations.

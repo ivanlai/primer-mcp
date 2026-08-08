@@ -1,0 +1,55 @@
+[project]
+name = "primer-mcp"
+version = "0.1.0"
+description = "A Jira-lite MCP server that enforces planning-first workflows for AI-assisted development — tickets as markdown files, your AI agent as the interface."
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Ivan Lai" }]
+requires-python = ">=3.12"
+keywords = ["mcp", "planning", "tickets", "ai-agents", "markdown"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development",
+]
+dependencies = [
+    "mcp",
+    "pydantic",
+    "python-frontmatter",
+    "networkx",
+]
+
+[project.urls]
+Homepage = "https://github.com/ivanlai/primer-mcp"
+Repository = "https://github.com/ivanlai/primer-mcp"
+Issues = "https://github.com/ivanlai/primer-mcp/issues"
+
+[project.scripts]
+primer-mcp = "primer_mcp.__main__:main"
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "ruff",
+    "mypy",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/primer_mcp"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.mypy]
+strict = true
+files = ["src"]

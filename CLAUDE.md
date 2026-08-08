@@ -11,7 +11,7 @@ A Jira-lite MCP server that enforces planning-first workflows for AI-assisted de
 ## Key conventions
 
 - **Language:** Python, packaged with `uv`, distributed via `uvx`
-- **Data store:** Markdown + YAML frontmatter in `.primer/` directory
+- **Data store:** Markdown + YAML frontmatter in `primer/` directory (visible, not dot-hidden; gitignored in THIS repo until the backlog migrates post-ST-005)
 - **No provider-specific code** — server must be MCP-protocol-only, no Anthropic/OpenAI SDK calls
 - **Ticket body templates** are defined in `docs/architecture.md` — follow them exactly when generating ticket files
 - **Graph edges** (`blocks`, `blocked_by`) are base fields on ALL ticket types, not just tasks
@@ -42,11 +42,14 @@ mcp                  # MCP server SDK
 pydantic             # schema validation
 python-frontmatter   # markdown + YAML frontmatter parsing
 networkx             # graph traversal and cycle detection
-uv                   # packaging and distribution
+uv                   # packaging and distribution (dev pinned to Python 3.13, requires-python >=3.12)
 pytest               # unit tests (use tmp_path fixture, no filesystem mocking)
+ruff                 # lint + format (dev)
+mypy                 # type checking (dev)
 ```
 
 ## Story status
 
-See `docs/epic-001.md` for the full story list. Implementation has not started.
-Next: ST-001 — Project scaffolding and packaging.
+See `docs/epic-001.md` for the full story list.
+Done: ST-001 — Project scaffolding, uv environment, and packaging.
+Next: ST-002 — Schema and Pydantic models.

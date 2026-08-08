@@ -1,8 +1,10 @@
 """Command-line entry point for the primer-mcp server."""
 
 import argparse
+from pathlib import Path
 
 from primer_mcp import __version__
+from primer_mcp.server import create_server
 
 
 def main() -> None:
@@ -26,13 +28,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    # Server startup lands with the MCP tool implementations.
-    parser.exit(
-        message=(
-            f"primer-mcp {__version__}: server not yet implemented "
-            f"(project dir: {args.project_dir})\n"
-        )
-    )
+    create_server(Path(args.project_dir)).run("stdio")
 
 
 if __name__ == "__main__":

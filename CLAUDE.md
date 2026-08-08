@@ -28,6 +28,7 @@ A Jira-lite MCP server that enforces planning-first workflows for AI-assisted de
 
 - Always enter plan mode before implementing a new story
 - Every story from ST-002 onward lands with its unit tests in the same PR — acceptance criteria are proven by tests, not deferred to ST-010
+- No filler tests. Every test must verify a real behaviour or acceptance criterion and be able to fail for a real reason — never add tests for coverage's or quantity's sake
 - Tasks must be completable in a single session (~3 files max)
 - Run `verify_task` before marking any task done
 - One PR per task
@@ -53,5 +54,18 @@ mypy                 # type checking (dev)
 ## Story status
 
 See `docs/epic-001.md` for the full story list.
-Done: ST-001 (scaffolding), ST-002 (schema and Pydantic models).
-Next: ST-003 — `init_project` tool.
+Done: ST-001 (scaffolding), ST-002 (schema/models), ST-003 (`init_project`).
+Next: ST-004 — planning tools `plan_epic`, `record_adr`.
+
+## primer-mcp
+
+This project uses primer-mcp for planning-first development. Tickets are
+markdown files under `primer/` — browse them freely, but create and update
+them through the primer-mcp tools, not by hand-editing frontmatter.
+
+- Plan before code. The hierarchy is Epic → ADR → Story → Task, and the
+  server enforces the order: an Epic needs at least one recorded ADR before
+  stories, a Story before tasks.
+- Unsure what to do next? Call `get_next_action`.
+- Completion is two-phase: `complete_task` with notes, then `verify_task`
+  with evidence (test output, command run). Both are required.

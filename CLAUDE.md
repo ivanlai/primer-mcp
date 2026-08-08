@@ -42,6 +42,7 @@ Do NOT read or reference `groundwork-mcp` or any similar existing repo. All desi
 mcp                  # MCP server SDK
 pydantic             # schema validation
 python-frontmatter   # markdown + YAML frontmatter parsing
+pyyaml               # direct YAML dumping (custom no-alias dumper, stable key order)
 networkx             # graph traversal and cycle detection
 uv                   # packaging and distribution (dev pinned to Python 3.13, requires-python >=3.12)
 pytest               # unit tests (use tmp_path fixture, no filesystem mocking)

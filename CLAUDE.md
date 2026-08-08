@@ -56,3 +56,16 @@ mypy                 # type checking (dev)
 See `docs/epic-001.md` for the full story list.
 Done: ST-001 (scaffolding), ST-002 (schema/models), ST-003 (`init_project`).
 Next: ST-004 — planning tools `plan_epic`, `record_adr`.
+
+## primer-mcp
+
+This project uses primer-mcp for planning-first development. Tickets are
+markdown files under `primer/` — browse them freely, but create and update
+them through the primer-mcp tools, not by hand-editing frontmatter.
+
+- Plan before code. The hierarchy is Epic → ADR → Story → Task, and the
+  server enforces the order: an Epic needs at least one recorded ADR before
+  stories, a Story before tasks.
+- Unsure what to do next? Call `get_next_action`.
+- Completion is two-phase: `complete_task` with notes, then `verify_task`
+  with evidence (test output, command run). Both are required.

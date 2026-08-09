@@ -31,8 +31,9 @@ A Jira-lite MCP server that enforces planning-first workflows for AI-assisted de
 - Every story from ST-002 onward lands with its unit tests in the same PR — acceptance criteria are proven by tests, not deferred to ST-010
 - No filler tests. Every test must verify a real behaviour or acceptance criterion and be able to fail for a real reason — never add tests for coverage's or quantity's sake
 - Tasks must be completable in a single session (~3 files max)
-- Run `verify_task` before marking any task done
 - One PR per task
+- Completion is two-phase: `complete_task` with notes, then `verify_task` with evidence. Both are required
+- **Tickets hold what git cannot; they never restate it.** Intent before the work — `testable_outcome`, acceptance criteria, an ADR's rejected alternatives — has no other home. What happened is git's job. So completion notes and evidence stay one line and point at the commit (`"126 passed, mypy clean — c4ac39f"`), rather than retelling it. Duplicating git is what makes Jira miserable, and a restated result also goes stale the moment review changes the code — `verified` is terminal, so there is no fixing it afterwards
 
 ## Plagiarism policy
 

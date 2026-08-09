@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//home/ivan/.claude/**)",
+      "Read(//home/ivan/.claude/projects/**)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
+    ]
+  }
+}

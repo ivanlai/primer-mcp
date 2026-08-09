@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from primer_mcp.graph import find_path
 from primer_mcp.models import Adr, Epic, Spike, Story, Task
 from primer_mcp.project import init_project
 from primer_mcp.storage import dumps_ticket, loads_ticket
@@ -612,3 +613,76 @@ class TestCompleteSpike:
         assert isinstance(ticket_before, Spike)
         assert isinstance(ticket_after, Spike)
         assert ticket_after.updated >= ticket_before.updated
+
+
+def status_of(project: Path, ticket_id: str) -> str:
+    ticket, _ = loads_ticket(find_path(project, ticket_id).read_text())
+    return ticket.status
+
+
+class TestDerivedStatusCascade:
+    """Completing the last child settles its parents; adding a new one reopens
+    them. Both directions run from the write tools, so disk stays honest
+    without any read tool having to derive anything."""
+
+    def scaffold(self, project: Path) -> tuple[str, str, str]:
+        epic_id = make_epic(project)
+        make_adr(project, epic_id)
+        story_id = make_story(project, epic_id)
+        task_id = create_task(
+            project, story_id, "Only task", what_to_do="w", testable_outcome="o"
+        )[0].split()[1].rstrip(":")
+        return epic_id, story_id, task_id
+
+    def finish(self, project: Path, task_id: str) -> list[str]:
+        start_task(project, task_id)
+        complete_task(project, task_id, "notes")
+        return verify_task(project, task_id, "evidence")
+
+    def test_last_verified_task_settles_story_and_epic(self, project: Path) -> None:
+        epic_id, story_id, task_id = self.scaffold(project)
+        self.finish(project, task_id)
+        assert status_of(project, story_id) == "done"
+        assert status_of(project, epic_id) == "done"
+
+    def test_cascade_is_reported_to_the_agent(self, project: Path) -> None:
+        # The agent needs to know the parents moved; it did not ask for it.
+        _, story_id, task_id = self.scaffold(project)
+        lines = self.finish(project, task_id)
+        assert any(story_id in line and "done" in line for line in lines)
+
+    def test_new_task_reopens_a_finished_story_and_epic(self, project: Path) -> None:
+        epic_id, story_id, task_id = self.scaffold(project)
+        self.finish(project, task_id)
+        create_task(project, story_id, "More work", what_to_do="w", testable_outcome="o")
+        assert status_of(project, story_id) == "in-progress"
+        assert status_of(project, epic_id) == "in-progress"
+
+    def test_new_story_reopens_a_finished_epic(self, project: Path) -> None:
+        epic_id, _, task_id = self.scaffold(project)
+        self.finish(project, task_id)
+        make_story(project, epic_id, "Second story")
+        assert status_of(project, epic_id) == "in-progress"
+
+    def test_completed_but_unverified_leaves_the_story_alone(self, project: Path) -> None:
+        # `completed` is the intermediate half of the two-phase gate.
+        _, story_id, task_id = self.scaffold(project)
+        start_task(project, task_id)
+        complete_task(project, task_id, "notes")
+        assert status_of(project, story_id) == "todo"
+
+    def test_spike_completion_settles_its_story(self, project: Path) -> None:
+        epic_id = make_epic(project)
+        make_adr(project, epic_id)
+        story_id = make_story(project, epic_id)
+        spike_id = create_spike(
+            project, story_id, "Investigate", question="?", timebox="1h"
+        )[0].split()[1].rstrip(":")
+        complete_spike(project, spike_id, "findings")
+        assert status_of(project, story_id) == "done"
+
+    def test_a_sibling_still_open_holds_the_story_back(self, project: Path) -> None:
+        _, story_id, first = self.scaffold(project)
+        create_task(project, story_id, "Second", what_to_do="w", testable_outcome="o")
+        self.finish(project, first)
+        assert status_of(project, story_id) == "todo"

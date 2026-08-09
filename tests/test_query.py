@@ -7,8 +7,8 @@ import pytest
 from primer_mcp.errors import GateError
 from primer_mcp.graph import find_path
 from primer_mcp.project import init_project
-from primer_mcp.query import get_ticket, list_tickets, update_ticket
-from primer_mcp.storage import loads_ticket
+from primer_mcp.query import get_next_action, get_ticket, list_tickets, update_ticket
+from primer_mcp.storage import dumps_ticket, loads_ticket
 from primer_mcp.tickets import (
     complete_spike,
     complete_task,
@@ -225,3 +225,152 @@ class TestUpdateBodyAndRefs:
         update_ticket(project, "TK-001", status="blocked")
         after, _ = loads_ticket(find_path(project, "TK-001").read_text())
         assert after.updated >= before.updated
+
+
+def force_edge(project: Path, ticket_id: str, blocked_by: list[str]) -> None:
+    """Write an edge straight to disk, bypassing validation — the only way to
+    build a cycle, since update_ticket exists to refuse them."""
+    path = find_path(project, ticket_id)
+    ticket, body = loads_ticket(path.read_text())
+    path.write_text(dumps_ticket(ticket.model_copy(update={"blocked_by": blocked_by}), body))
+
+
+def next_action(project: Path) -> str:
+    return "\n".join(get_next_action(project))
+
+
+class TestLadderRungs:
+    """Each rung reached in isolation. The ladder returns on the first match,
+    so every test here builds a store where exactly one rung applies."""
+
+    def test_no_store_points_at_init(self, tmp_path: Path) -> None:
+        assert "init_project" in next_action(tmp_path)
+
+    def test_no_epics_points_at_plan_epic(self, tmp_path: Path) -> None:
+        init_project(tmp_path, "demo")
+        assert "plan_epic" in next_action(tmp_path)
+
+    def test_epic_without_adr_points_at_record_adr(self, tmp_path: Path) -> None:
+        init_project(tmp_path, "demo")
+        plan_epic(tmp_path, "Epic", why="w", goals=["g"])
+        assert "record_adr" in next_action(tmp_path)
+
+    def test_epic_without_stories_points_at_create_story(self, tmp_path: Path) -> None:
+        init_project(tmp_path, "demo")
+        epic_id = _id(plan_epic(tmp_path, "Epic", why="w", goals=["g"]))
+        record_adr(
+            tmp_path,
+            epic_id,
+            "D",
+            context="c",
+            decision="d",
+            alternatives=[],
+            consequences="q",
+        )
+        assert "create_story" in next_action(tmp_path)
+
+    def test_ready_task_points_at_start_task(self, project: Path) -> None:
+        assert "start_task" in next_action(project)
+        assert "TK-001" in next_action(project)
+
+    def test_in_progress_task_points_at_complete_task(self, project: Path) -> None:
+        start_task(project, "TK-001")
+        assert "complete_task" in next_action(project)
+
+    def test_completed_task_points_at_verify_task(self, project: Path) -> None:
+        start_task(project, "TK-001")
+        complete_task(project, "TK-001", "notes")
+        assert "verify_task" in next_action(project)
+
+    def test_ready_spike_quotes_its_timebox(self, project: Path) -> None:
+        for task in ("TK-001", "TK-002"):
+            start_task(project, task)
+            complete_task(project, task, "n")
+            verify_task(project, task, "e")
+        story_id = _id(create_story(project, "EP-001", "Second", what="w"))
+        create_spike(project, story_id, "Investigate", question="?", timebox="2 hours")
+        answer = next_action(project)
+        assert "complete_spike" in answer and "2 hours" in answer
+
+    def test_childless_story_points_at_create_task(self, project: Path) -> None:
+        for task in ("TK-001", "TK-002"):
+            start_task(project, task)
+            complete_task(project, task, "n")
+            verify_task(project, task, "e")
+        create_story(project, "EP-001", "Second", what="w")
+        assert "create_task" in next_action(project)
+
+    def test_all_done_says_nothing_outstanding(self, project: Path) -> None:
+        for task in ("TK-001", "TK-002"):
+            start_task(project, task)
+            complete_task(project, task, "n")
+            verify_task(project, task, "e")
+        assert "Nothing is outstanding" in next_action(project)
+
+    def test_cycle_is_reported_before_anything_else(self, project: Path) -> None:
+        force_edge(project, "TK-001", ["TK-002"])
+        force_edge(project, "TK-002", ["TK-001"])
+        answer = next_action(project)
+        assert "cycle" in answer and "TK-001" in answer and "TK-002" in answer
+
+
+class TestLadderPrecedence:
+    """The orderings that were real decisions rather than falling out of the code."""
+
+    def test_completed_task_outranks_planning_another_story(self, project: Path) -> None:
+        # A half-open two-phase gate beats creating anything new.
+        start_task(project, "TK-001")
+        complete_task(project, "TK-001", "notes")
+        create_story(project, "EP-001", "Story with no tasks", what="w")
+        answer = next_action(project)
+        assert "verify_task" in answer and "create_task" not in answer
+
+    def test_ready_work_outranks_planning_another_story(self, project: Path) -> None:
+        # Found by dogfooding: a real backlog is mostly task-less stories, so
+        # the other order proposes planning forever while work sits ready.
+        create_story(project, "EP-001", "Story with no tasks", what="w")
+        answer = next_action(project)
+        assert "start_task" in answer and "create_task" not in answer
+
+    def test_a_second_epic_stays_invisible(self, project: Path) -> None:
+        # One epic at a time: EP-002's work is unreachable until EP-001 closes.
+        epic_two = _id(plan_epic(project, "Later epic", why="w", goals=["g"]))
+        record_adr(
+            project,
+            epic_two,
+            "D",
+            context="c",
+            decision="d",
+            alternatives=[],
+            consequences="q",
+        )
+        answer = next_action(project)
+        assert "TK-001" in answer and epic_two not in answer
+
+    def test_an_open_spike_does_not_withhold_a_sibling_task(self, project: Path) -> None:
+        # Spikes inform work, they do not implicitly gate it (ADR-006). Marking
+        # the spike blocked is what makes this discriminating: it drops out of
+        # the ladder, and if spikes gated siblings the tasks would go with it.
+        create_spike(project, "ST-001", "Question", question="?", timebox="1h")
+        update_ticket(project, "SP-001", status="blocked")
+        assert "TK-001" in next_action(project)
+
+    def test_a_ready_spike_is_offered_before_a_sibling_task(self, project: Path) -> None:
+        # Not a gate, just ID order: SP sorts before TK.
+        create_spike(project, "ST-001", "Question", question="?", timebox="1h")
+        assert "SP-001" in next_action(project)
+
+    def test_a_blocked_dependency_hides_the_ticket(self, project: Path) -> None:
+        update_ticket(project, "TK-001", blocked_by=["TK-002"])
+        answer = next_action(project)
+        assert "TK-002" in answer and "TK-001" not in answer
+
+
+class TestBlockerReport:
+    def test_names_what_each_ticket_waits_on(self, project: Path) -> None:
+        update_ticket(project, "TK-001", blocked_by=["TK-002"])
+        update_ticket(project, "TK-002", status="blocked")
+        answer = next_action(project)
+        assert "Nothing is ready" in answer
+        assert "TK-001 waits on TK-002" in answer
+        assert "TK-002 is blocked" in answer

@@ -33,7 +33,8 @@ A Jira-lite MCP server that enforces planning-first workflows for AI-assisted de
 - Tasks must be completable in a single session (~3 files max)
 - One PR per task
 - Completion is two-phase: `complete_task` with notes, then `verify_task` with evidence. Both are required
-- **Tickets hold what git cannot; they never restate it.** Intent before the work — `testable_outcome`, acceptance criteria, an ADR's rejected alternatives — has no other home. What happened is git's job. So completion notes and evidence stay one line and point at the commit (`"126 passed, mypy clean — c4ac39f"`), rather than retelling it. Duplicating git is what makes Jira miserable, and a restated result also goes stale the moment review changes the code — `verified` is terminal, so there is no fixing it afterwards
+- **Tickets hold what git cannot; they never restate it.** Intent before the work — `testable_outcome`, acceptance criteria, an ADR's rejected alternatives — has no other home. What happened, and how, is git's job. So keep ticket bodies at overview level: the goal, not the implementation. Notes and evidence stay one line and point at the commit (`"126 passed, mypy clean — c4ac39f"`) rather than retelling it. Duplicating git is what makes Jira miserable, and detail written before the work is what makes tickets lie: TK-007 listed the functions it would add, the real implementation added others, and `verified` is terminal so it says so permanently
+- Detail is safe where the content describes a moment rather than a state, which is why ADRs are the exception: a rejected alternative stays true forever, and a reversal is a new ADR superseding the old one, not an edit
 
 ## Plagiarism policy
 

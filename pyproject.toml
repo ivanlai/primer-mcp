@@ -48,6 +48,14 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/primer_mcp"]
 
+# The sdist otherwise ships the whole repo. Tests and docs belong there — a
+# source build should be verifiable — but these two do not.
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "primer/",   # this project's own ticket store: project management, not software
+    ".claude/",  # local agent settings, carries absolute paths from the dev machine
+]
+
 [tool.ruff]
 line-length = 100
 target-version = "py312"

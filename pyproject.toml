@@ -39,6 +39,7 @@ dev = [
     "ruff",
     "mypy",
     "types-pyyaml",
+    "types-networkx>=3.6.1.20260728",
 ]
 
 [build-system]

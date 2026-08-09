@@ -13,25 +13,10 @@ from pathlib import Path
 
 import frontmatter
 
+from primer_mcp.errors import GateError
 from primer_mcp.models import ID_PREFIX, Adr, Epic, Spike, Story, Task
-from primer_mcp.project import PRIMER_DIR
+from primer_mcp.project import PRIMER_DIR, SUBDIR_FOR_TYPE
 from primer_mcp.storage import dumps_ticket, loads_ticket
-
-SUBDIR_FOR_TYPE = {
-    "epic": "epics",
-    "adr": "adrs",
-    "story": "stories",
-    "task": "tasks",
-    "spike": "spikes",
-}
-
-
-class GateError(ValueError):
-    """A workflow gate blocked the operation.
-
-    The message is agent-steering: what failed, why, and the exact
-    next call to make. Surfaced verbatim as the tool response.
-    """
 
 
 def _primer_dir(project_dir: Path) -> Path:

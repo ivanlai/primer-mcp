@@ -12,7 +12,17 @@ from pathlib import Path
 import yaml
 
 PRIMER_DIR = "primer"
-SUBDIRS = ("epics", "adrs", "stories", "tasks", "spikes")
+
+# Where each ticket type lives under primer/. Single source of truth for the
+# store layout: SUBDIRS below and every path lookup derive from it.
+SUBDIR_FOR_TYPE = {
+    "epic": "epics",
+    "adr": "adrs",
+    "story": "stories",
+    "task": "tasks",
+    "spike": "spikes",
+}
+SUBDIRS = tuple(SUBDIR_FOR_TYPE.values())
 
 # Idempotency marker: if this heading exists in CLAUDE.md, we never touch the file.
 SNIPPET_HEADING = "## primer-mcp"

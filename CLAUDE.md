@@ -67,8 +67,11 @@ summary task each, carrying their real merge commits as verification evidence.
 ## primer-mcp
 
 This project uses primer-mcp for planning-first development. Tickets are
-markdown files under `primer/` — browse them freely, but create and update
-them through the primer-mcp tools, not by hand-editing frontmatter.
+markdown files under `primer/` — they are yours to read and edit. Prefer the
+tools for creating and updating them: they allocate IDs, follow the templates
+and enforce the workflow. Hand-edit where the tools fall short, but not to set
+a status the workflow owns — `verified` and `done` are reached through the
+tools or not at all.
 
 - Plan before code. The hierarchy is Epic → ADR → Story → Task, and the
   server enforces the order: an Epic needs at least one recorded ADR before

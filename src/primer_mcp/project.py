@@ -12,6 +12,7 @@ from pathlib import Path
 import yaml
 
 from primer_mcp.errors import GateError
+from primer_mcp.models import SCHEMA_VERSION
 
 PRIMER_DIR = "primer"
 
@@ -52,8 +53,11 @@ SNIPPET_HEADING = "## primer-mcp"
 CLAUDE_MD_SNIPPET = f"""{SNIPPET_HEADING}
 
 This project uses primer-mcp for planning-first development. Tickets are
-markdown files under `primer/` — browse them freely, but create and update
-them through the primer-mcp tools, not by hand-editing frontmatter.
+markdown files under `primer/` — they are yours to read and edit. Prefer the
+tools for creating and updating them: they allocate IDs, follow the templates
+and enforce the workflow. Hand-edit where the tools fall short, but not to set
+a status the workflow owns — `verified` and `done` are reached through the
+tools or not at all.
 
 - Plan before code. The hierarchy is Epic → ADR → Story → Task, and the
   server enforces the order: an Epic needs at least one recorded ADR before
@@ -90,7 +94,10 @@ def init_project(
     if config_path.exists():
         lines.append(f"Kept existing {PRIMER_DIR}/config.yaml (never overwritten)")
     else:
-        config: dict[str, object] = {"project_name": project_name}
+        config: dict[str, object] = {
+            "project_name": project_name,
+            "schema_version": SCHEMA_VERSION,
+        }
         if jira_project_key is not None:
             config["jira"] = {"project_key": jira_project_key}
         config_path.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")

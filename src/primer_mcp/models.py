@@ -13,6 +13,15 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+# Version of the on-disk ticket schema, stamped into primer/config.yaml so a
+# store can be dated across primer-mcp upgrades. Recorded, never enforced:
+# nothing reads it to gate behaviour, because `extra="allow"` below means a
+# store from another version stays readable either way. It exists because a
+# stamp cannot be added retroactively — once stores are in the wild without
+# one, their vintage is unknowable and any future migration is guesswork.
+# Bump when a change would stop an older build round-tripping a store.
+SCHEMA_VERSION = 1
+
 # Ticket ID prefix per type. Single source of truth: the per-model ID
 # patterns below and ID generation both derive from it.
 ID_PREFIX = {
@@ -43,7 +52,15 @@ class TicketBase(BaseModel):
     at read time, never a field.
     """
 
-    model_config = ConfigDict(extra="forbid")
+    # Unknown frontmatter keys are kept and written back untouched, never
+    # rejected and never dropped. Strictness here would make every field
+    # removal a breaking change requiring a migration, and would let one
+    # stale key block every tool call against a store. Tolerating them means
+    # an older build can read a newer store without losing what it does not
+    # understand. The trade is that a mistyped key is inert rather than
+    # loud — acceptable, because the tools are the interface and they do not
+    # mistype. Workflow gets gates; data gets tolerance.
+    model_config = ConfigDict(extra="allow")
 
     id: str
     title: str

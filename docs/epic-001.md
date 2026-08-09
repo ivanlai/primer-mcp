@@ -3,20 +3,18 @@
 ## Goals
 Build a working, published MCP server that enforces planning-first workflows for AI-assisted development. See `docs/planning.md` for full goals, constraints, and success criteria.
 
-## Archived — the live backlog is `primer/`
+## The live backlog is `primer/`
 
-This document is history. From ST-007 onward the backlog lives in `primer/`,
-created with primer-mcp's own tools, and that is the only reference to quote
-when working.
+Story IDs here match the store exactly — ST-007 is ST-007 in both. This file
+keeps the prose descriptions; `primer/` carries status, tasks, dependencies and
+the ADRs. Create and update tickets through the tools, never by hand-editing
+either.
 
-ST-001 through ST-006 were finished before the store existed and were not
-migrated: `done` is derived from child tasks and no tool asserts it, so
-completed history cannot be imported.
-
-The remaining stories migrated in order, so **ST-007 through ST-014 here are
-ST-001 through ST-008 in the store**. The numbers overlap rather than offset —
-this document's ST-013 is the store's ST-007 — so old commit messages and this
-file mean something different by "ST-007" than the store does.
+ST-001 through ST-006 were delivered before the store existed. Rather than
+leave them out, each was back-filled with one summary task walked through the
+real lifecycle, carrying its actual merge commit as verification evidence — so
+those stories derive to `done` from genuine history rather than an asserted
+status.
 
 ## Stories
 

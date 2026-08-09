@@ -26,6 +26,7 @@ A Jira-lite MCP server that enforces planning-first workflows for AI-assisted de
 
 ## Development workflow
 
+- Dogfood wherever possible — plan and track this project's own work with primer-mcp's own tools, and fix what that exposes. If we don't trust our own process, why should anyone else?
 - Always enter plan mode before implementing a new story
 - Every story from ST-002 onward lands with its unit tests in the same PR — acceptance criteria are proven by tests, not deferred to ST-010
 - No filler tests. Every test must verify a real behaviour or acceptance criterion and be able to fail for a real reason — never add tests for coverage's or quantity's sake
@@ -53,9 +54,13 @@ mypy                 # type checking (dev)
 
 ## Story status
 
-See `docs/epic-001.md` for the full story list.
-Done: ST-001 (scaffolding), ST-002 (schema/models), ST-003 (`init_project`), ST-004 (MCP server + `plan_epic`/`record_adr`), ST-005 (execution tools `create_story`, `create_task`, `create_spike`, `start_task`).
-Next: ST-006 — completion tools `complete_task`, `verify_task`, `complete_spike`.
+Done: ST-001 (scaffolding), ST-002 (schema/models), ST-003 (`init_project`), ST-004 (MCP server + `plan_epic`/`record_adr`), ST-005 (execution tools), ST-006 (completion tools `complete_task`, `verify_task`, `complete_spike`).
+Next: ST-007 — query and graph tools `get_next_action`, `get_ticket`, `list_tickets`, `update_ticket`.
+
+The live backlog is `primer/`; `docs/epic-001.md` keeps the prose descriptions.
+Story IDs match across both — ST-007 means the query and graph tools story
+everywhere. ST-001 through ST-006 were back-filled during migration with one
+summary task each, carrying their real merge commits as verification evidence.
 
 ## primer-mcp
 

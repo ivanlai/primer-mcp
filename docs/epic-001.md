@@ -3,6 +3,19 @@
 ## Goals
 Build a working, published MCP server that enforces planning-first workflows for AI-assisted development. See `docs/planning.md` for full goals, constraints, and success criteria.
 
+## The live backlog is `primer/`
+
+Story IDs here match the store exactly — ST-007 is ST-007 in both. This file
+keeps the prose descriptions; `primer/` carries status, tasks, dependencies and
+the ADRs. Create and update tickets through the tools, never by hand-editing
+either.
+
+ST-001 through ST-006 were delivered before the store existed. Rather than
+leave them out, each was back-filled with one summary task walked through the
+real lifecycle, carrying its actual merge commit as verification evidence — so
+those stories derive to `done` from genuine history rather than an asserted
+status.
+
 ## Stories
 
 ### ST-001: Project scaffolding, uv environment, and packaging
@@ -109,3 +122,13 @@ Add a README section that frames the repo as a demonstration of AI-orchestrated 
 - Note what was learned and what the co-author tags represent (transparency, not delegation)
 - Tone: thesis statement, not apology — "here's how I ship with AI" not "AI helped me"
 - Acceptance: README contains a clearly authored section that a hiring manager at an AI company would read as evidence of orchestration skill
+
+### ST-014: `reopen_task` — reversing a verified task
+Add an explicit tool for when a verified task's fix did not hold. Deliberately not a generic `update_ticket` status edit — ST-007 rejects status changes on terminal tickets so that reopening is always an intentional, recorded act.
+- `reopen_task(task_id, reason)`: gates on status `verified`; returns the task to `todo` and records the reason
+- Prior `verified_evidence` is preserved in the body — it was true when written, so it is superseded rather than deleted
+- Cascades upward: parent story and epic revert from `done` to `in-progress` via ST-007's `recompute_parents`
+- No cascade to dependents: `blocked_by` readiness is computed per call, so tickets depending on the reopened task stop being offered automatically, with no writes
+- Open question: should spikes be reopenable too? `complete_spike` is likewise terminal
+- Acceptance: reopening the last verified task of a done story reverts both story and epic; a ticket `blocked_by` the reopened task is no longer offered by `get_next_action`; reopening a non-verified task fails with an actionable error naming the current status
+- Blocked by: ST-007 (needs `recompute_parents` and the graph layer)

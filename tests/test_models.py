@@ -85,12 +85,19 @@ class TestIdPatterns:
 
 class TestEdges:
     def test_cross_type_edges_accepted(self) -> None:
-        epic = Epic(**valid_kwargs(Epic), blocked_by=["ST-002", "TK-010"], blocks=["ADR-003"])
-        assert epic.blocked_by == ["ST-002", "TK-010"]
+        epic = Epic(**valid_kwargs(Epic), blocked_by=["ST-002", "TK-010", "ADR-003"])
+        assert epic.blocked_by == ["ST-002", "TK-010", "ADR-003"]
 
     def test_malformed_edge_rejected(self) -> None:
         with pytest.raises(ValidationError, match="dependency edge"):
-            Task(**valid_kwargs(Task), blocks=["banana"])
+            Task(**valid_kwargs(Task), blocked_by=["banana"])
+
+    def test_blocks_field_is_gone(self) -> None:
+        # blocked_by is the only stored edge; "A blocks B" is recorded on B.
+        # extra="forbid" turns a stale `blocks:` key into a clear failure
+        # rather than a silently ignored field.
+        with pytest.raises(ValidationError):
+            Task(**valid_kwargs(Task), blocks=["TK-002"])
 
 
 class TestStrictness:

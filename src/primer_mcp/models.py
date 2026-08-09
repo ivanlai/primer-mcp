@@ -29,13 +29,19 @@ def _id_pattern(ticket_type: str) -> str:
     return rf"^{ID_PREFIX[ticket_type]}-\d{{3,}}$"
 
 
-# Any ticket may reference any other ticket in blocks/blocked_by,
+# Any ticket may reference any other ticket in blocked_by,
 # so edge entries accept every type prefix.
 TICKET_ID_PATTERN = re.compile(rf"^({'|'.join(ID_PREFIX.values())})-\d{{3,}}$")
 
 
 class TicketBase(BaseModel):
-    """Fields common to every ticket type, including graph edges."""
+    """Fields common to every ticket type, including graph edges.
+
+    `blocked_by` is the only stored dependency edge: "A blocks B" and
+    "B is blocked by A" are one directed edge stated from two ends, so
+    storing both invites drift. The reverse direction is a graph lookup
+    at read time, never a field.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
@@ -43,11 +49,10 @@ class TicketBase(BaseModel):
     title: str
     created: date
     updated: date
-    blocks: list[str] = Field(default_factory=list)
     blocked_by: list[str] = Field(default_factory=list)
     external_ref: dict[str, str] = Field(default_factory=dict)
 
-    @field_validator("blocks", "blocked_by")
+    @field_validator("blocked_by")
     @classmethod
     def _validate_edge_ids(cls, value: list[str]) -> list[str]:
         for ticket_id in value:

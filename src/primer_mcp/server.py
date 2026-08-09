@@ -14,6 +14,7 @@ from typing import Any
 from mcp.server.mcpserver import MCPServer
 
 from primer_mcp import project, tickets
+from primer_mcp.errors import GateError
 
 INSTRUCTIONS = """\
 primer-mcp enforces a planning-first workflow. The hierarchy is
@@ -29,7 +30,7 @@ def _gated(fn: Callable[..., list[str]], *args: Any) -> str:
 
     try:
         return "\n".join(fn(*args))
-    except tickets.GateError as err:
+    except GateError as err:
         return str(err)
 
 

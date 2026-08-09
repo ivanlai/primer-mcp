@@ -30,7 +30,7 @@ Set up the uv-managed Python environment, project structure, `pyproject.toml`, a
 ### ST-002: Schema and Pydantic models
 Define and validate all ticket types as Pydantic models.
 - Models for: Epic, ADR, Story, Task, Spike
-- Shared base model with common fields, including `blocks`/`blocked_by` and optional `external_ref`
+- Shared base model with common fields, including `blocked_by` and optional `external_ref`
 - Per-type status validation matching the Ticket Lifecycle in `docs/architecture.md` (tasks: `todo | in-progress | blocked | completed | verified`; epics/stories/spikes: `todo | in-progress | blocked | done`)
 - Frontmatter serialisation/deserialisation round-trips cleanly
 - Acceptance: all models validate valid inputs and reject invalid ones, including statuses not allowed for the type
@@ -70,9 +70,9 @@ Implement project navigation and read/update tools using networkx.
 - `get_next_action`: returns the first unmet workflow gate, else the next unblocked ticket in deterministic order (topological order of the dependency graph, oldest ID first)
 - `get_ticket`: returns one ticket (frontmatter + body) by ID
 - `list_tickets`: lists tickets, filterable by type and status
-- `update_ticket`: post-creation edits — status (e.g. `blocked`), `blocks`/`blocked_by` edges, body sections
+- `update_ticket`: post-creation edits — status (e.g. `blocked`), `blocked_by` edges, body sections, `external_ref`
 - Derived done-ness: story done when all child tasks `verified` and spikes `done`; epic done when all stories done
-- Internal graph built from hierarchy + `blocks`/`blocked_by` fields; cycle detection on dependency edges only
+- Internal graph built from `blocked_by`; cycle detection on dependency edges only
 - Acceptance: correctly identifies blockers; rejects edge updates that would create a dependency cycle
 
 ### ST-008: `export_graph` — vis.js HTML output

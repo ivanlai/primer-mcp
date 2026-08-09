@@ -135,4 +135,28 @@ def create_server(project_dir: Path) -> MCPServer:
         be completed or verified. After finishing, call complete_task."""
         return _gated(tickets.start_task, project_dir, task_id)
 
+    @server.tool(name="complete_task")
+    def complete_task(task_id: str, notes: str) -> str:
+        """Mark a task as completed with notes on what was done. The task must
+        be in-progress (call start_task first if it isn't). This is phase one
+        of the two-phase completion gate — after this, call verify_task with
+        evidence (test output, command run) to finalise."""
+        return _gated(tickets.complete_task, project_dir, task_id, notes)
+
+    @server.tool(name="verify_task")
+    def verify_task(task_id: str, evidence: str) -> str:
+        """Verify a completed task with evidence (test output, command run,
+        screenshot reference). The task must already be completed via
+        complete_task — this is the second phase of the two-phase gate.
+        Sets the task to verified (terminal). Cannot be undone."""
+        return _gated(tickets.verify_task, project_dir, task_id, evidence)
+
+    @server.tool(name="complete_spike")
+    def complete_spike(spike_id: str, findings: str) -> str:
+        """Close a spike by recording its findings — the answer to the
+        question it was investigating and any recommendations. The spike
+        must be in todo or in-progress (not blocked or already done).
+        Sets status to done (terminal)."""
+        return _gated(tickets.complete_spike, project_dir, spike_id, findings)
+
     return server

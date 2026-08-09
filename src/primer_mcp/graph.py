@@ -21,7 +21,7 @@ from pydantic import ValidationError
 
 from primer_mcp.errors import GateError
 from primer_mcp.models import ID_PREFIX, Epic, Spike, Story, Task, Ticket
-from primer_mcp.project import SUBDIR_FOR_TYPE
+from primer_mcp.project import SUBDIR_FOR_TYPE, require_store
 from primer_mcp.storage import dumps_ticket, loads_ticket
 
 # The status at which a ticket stops holding up its parent.
@@ -39,12 +39,13 @@ def sort_key(ticket_id: str) -> tuple[str, int]:
     return prefix, int(number)
 
 
-def find_path(primer: Path, ticket_id: str) -> Path:
+def find_path(project_dir: Path, ticket_id: str) -> Path:
     """Resolve a bare ticket ID to its file: TK-001 -> primer/tasks/TK-001.md.
 
     Callers that take an ID without a type (get_ticket, update_ticket) need
     this; the prefix is what identifies the subdirectory.
     """
+    primer = require_store(project_dir)
     for ticket_type, prefix in ID_PREFIX.items():
         if ticket_id.startswith(f"{prefix}-"):
             path = primer / SUBDIR_FOR_TYPE[ticket_type] / f"{ticket_id}.md"
@@ -59,8 +60,14 @@ def find_path(primer: Path, ticket_id: str) -> Path:
     )
 
 
-def load_tickets(primer: Path) -> dict[str, Ticket]:
-    """Read every ticket in the store, keyed by ID."""
+def load_tickets(project_dir: Path) -> dict[str, Ticket]:
+    """Read every ticket in the store, keyed by ID.
+
+    Missing subdirectories are tolerated rather than treated as corruption:
+    git does not track empty directories, so a fresh clone of a store with no
+    spikes has no spikes/ at all. glob on a missing directory yields nothing.
+    """
+    primer = require_store(project_dir)
     tickets: dict[str, Ticket] = {}
     for subdir in SUBDIR_FOR_TYPE.values():
         for path in sorted((primer / subdir).glob("*.md")):
@@ -144,7 +151,7 @@ def _parent_chain(tickets: dict[str, Ticket], ticket_id: str) -> list[str]:
     return []
 
 
-def recompute_parents(primer: Path, ticket_id: str) -> list[str]:
+def recompute_parents(project_dir: Path, ticket_id: str) -> list[str]:
     """Push derived done-ness up the hierarchy after a write, and pull it back
     down when a new child undoes it. Returns a line per file changed.
 
@@ -155,7 +162,8 @@ def recompute_parents(primer: Path, ticket_id: str) -> list[str]:
       - anything else -> leave alone, so an explicit `blocked` on a story
         with unfinished children survives
     """
-    tickets = load_tickets(primer)
+    primer = require_store(project_dir)
+    tickets = load_tickets(project_dir)
     changed: list[str] = []
     today = datetime.now(tz=UTC).date()
 

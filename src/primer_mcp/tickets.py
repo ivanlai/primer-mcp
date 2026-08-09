@@ -15,21 +15,11 @@ import frontmatter
 
 from primer_mcp.errors import GateError
 from primer_mcp.models import ID_PREFIX, Adr, Epic, Spike, Story, Task
-from primer_mcp.project import PRIMER_DIR, SUBDIR_FOR_TYPE
+from primer_mcp.project import SUBDIR_FOR_TYPE, require_store
 from primer_mcp.storage import dumps_ticket, loads_ticket
 
 
-def _primer_dir(project_dir: Path) -> Path:
-    primer = project_dir / PRIMER_DIR
-    if not primer.is_dir():
-        raise GateError(
-            f"Project not initialised: {primer} does not exist. "
-            "Run init_project first, then retry."
-        )
-    return primer
-
-
-def next_id(primer_dir: Path, ticket_type: str) -> str:
+def next_id(primer: Path, ticket_type: str) -> str:
     """Allocate the next sequential ID for a ticket type by scanning existing
     files, e.g. tasks/ holding TK-001.md and TK-007.md -> "TK-008".
 
@@ -37,7 +27,7 @@ def next_id(primer_dir: Path, ticket_type: str) -> str:
     to three digits but parsed unpadded, so numbering survives past 999.
     """
     prefix = ID_PREFIX[ticket_type]
-    subdir = primer_dir / SUBDIR_FOR_TYPE[ticket_type]
+    subdir = primer / SUBDIR_FOR_TYPE[ticket_type]
     pattern = re.compile(rf"^{prefix}-(\d+)$")
     highest = 0
     for path in subdir.glob(f"{prefix}-*.md"):
@@ -94,7 +84,7 @@ def plan_epic(
     success_criteria: list[str] | None = None,
 ) -> list[str]:
     """Create an Epic ticket. Returns steering lines for the tool response."""
-    primer = _primer_dir(project_dir)
+    primer = require_store(project_dir)
     epic_id = next_id(primer, "epic")
     today = datetime.now(tz=UTC).date()
     epic = Epic(
@@ -137,7 +127,7 @@ def record_adr(
     consequences: str,
 ) -> list[str]:
     """Record an ADR under an epic. Gate: the epic must exist."""
-    primer = _primer_dir(project_dir)
+    primer = require_store(project_dir)
     epic_path = primer / "epics" / f"{epic_id}.md"
     if not epic_path.is_file():
         existing = sorted(p.stem for p in (primer / "epics").glob("EP-*.md"))
@@ -188,7 +178,7 @@ def create_story(
     definition_of_done: list[str] | None = None,
 ) -> list[str]:
     """Create a Story under an epic. Gate: epic must exist and have at least one ADR."""
-    primer = _primer_dir(project_dir)
+    primer = require_store(project_dir)
 
     epic_path = primer / "epics" / f"{epic_id}.md"
     if not epic_path.is_file():
@@ -250,7 +240,7 @@ def create_task(
     testable_outcome: str,
 ) -> list[str]:
     """Create a Task under a story. Gate: story must exist."""
-    primer = _primer_dir(project_dir)
+    primer = require_store(project_dir)
     _require_ticket(primer, story_id, "story", "create ticket")
 
     task_id = next_id(primer, "task")
@@ -287,7 +277,7 @@ def create_spike(
     timebox: str,
 ) -> list[str]:
     """Create a Spike under a story. Gate: story must exist."""
-    primer = _primer_dir(project_dir)
+    primer = require_store(project_dir)
     _require_ticket(primer, story_id, "story", "create ticket")
 
     spike_id = next_id(primer, "spike")
@@ -323,7 +313,7 @@ def start_task(
     task_id: str,
 ) -> list[str]:
     """Transition a task to in-progress. Gate: task must exist and be in todo or blocked."""
-    primer = _primer_dir(project_dir)
+    primer = require_store(project_dir)
     task_path = _require_ticket(primer, task_id, "task", "start task")
 
     ticket, body = loads_ticket(task_path.read_text(encoding="utf-8"))
@@ -354,7 +344,7 @@ def complete_task(
     notes: str,
 ) -> list[str]:
     """Complete a task. Gate: task must be in-progress."""
-    primer = _primer_dir(project_dir)
+    primer = require_store(project_dir)
     task_path = _require_ticket(primer, task_id, "task", "complete task")
 
     ticket, body = loads_ticket(task_path.read_text(encoding="utf-8"))
@@ -398,7 +388,7 @@ def verify_task(
     evidence: str,
 ) -> list[str]:
     """Verify a completed task. Gate: task must be completed (two-phase gate)."""
-    primer = _primer_dir(project_dir)
+    primer = require_store(project_dir)
     task_path = _require_ticket(primer, task_id, "task", "verify task")
 
     ticket, body = loads_ticket(task_path.read_text(encoding="utf-8"))
@@ -437,7 +427,7 @@ def complete_spike(
     findings: str,
 ) -> list[str]:
     """Complete a spike with findings. Gate: spike must be todo or in-progress."""
-    primer = _primer_dir(project_dir)
+    primer = require_store(project_dir)
     spike_path = _require_ticket(primer, spike_id, "spike", "complete spike")
 
     ticket, body = loads_ticket(spike_path.read_text(encoding="utf-8"))

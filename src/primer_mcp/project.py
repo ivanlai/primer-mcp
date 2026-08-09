@@ -11,6 +11,8 @@ from pathlib import Path
 
 import yaml
 
+from primer_mcp.errors import GateError
+
 PRIMER_DIR = "primer"
 
 # Where each ticket type lives under primer/. Single source of truth for the
@@ -23,6 +25,26 @@ SUBDIR_FOR_TYPE = {
     "spike": "spikes",
 }
 SUBDIRS = tuple(SUBDIR_FOR_TYPE.values())
+
+
+def require_store(project_dir: Path) -> Path:
+    """Resolve a project directory to its ticket store, or raise.
+
+    Every entry point in the package takes the *project* directory and
+    converts here, so there is one convention rather than two. Passing the
+    store itself is caught by the same check: primer/primer does not exist.
+
+    Named for what it does rather than what it returns, matching
+    `_require_ticket` in tickets.py — and to stay clear of PRIMER_DIR above,
+    which is the directory's name, not a resolved path.
+    """
+    primer = project_dir / PRIMER_DIR
+    if not primer.is_dir():
+        raise GateError(
+            f"Project not initialised: {primer} does not exist. Run init_project first, then retry."
+        )
+    return primer
+
 
 # Idempotency marker: if this heading exists in CLAUDE.md, we never touch the file.
 SNIPPET_HEADING = "## primer-mcp"

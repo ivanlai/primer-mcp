@@ -74,20 +74,29 @@ def _checklist(items: list[str], empty: str = "(none)") -> str:
     return "\n".join(f"- [ ] {item}" for item in items) if items else f"- {empty}"
 
 
-def _require_story(primer: Path, story_id: str) -> Path:
-    story_path = primer / "stories" / f"{story_id}.md"
-    if not story_path.is_file():
-        existing = sorted(p.stem for p in (primer / "stories").glob("ST-*.md"))
+def _require_ticket(primer: Path, ticket_id: str, ticket_type: str, action: str) -> Path:
+    # Returns the ticket path or raises GateError with existing-ticket hints.
+    subdir = SUBDIR_FOR_TYPE[ticket_type]
+    prefix = ID_PREFIX[ticket_type]
+    path = primer / subdir / f"{ticket_id}.md"
+    if not path.is_file():
+        existing = sorted(p.stem for p in (primer / subdir).glob(f"{prefix}-*.md"))
         hint = (
-            f"Existing stories: {', '.join(existing)}."
+            f"Existing {subdir}: {', '.join(existing)}."
             if existing
-            else "No stories exist yet — create one with create_story first."
+            else f"No {subdir} exist yet — create one with create_{ticket_type} first."
         )
-        raise GateError(
-            f"Cannot create ticket: story {story_id!r} not found. {hint} "
-            f"Then call create_task or create_spike with a valid story_id."
-        )
-    return story_path
+        raise GateError(f"Cannot {action}: {ticket_id!r} not found. {hint}")
+    return path
+
+
+def _update_section(body: str, heading: str, content: str) -> str:
+    marker = f"## {heading}"
+    start = body.index(marker) + len(marker)
+    next_heading = body.find("\n## ", start)
+    if next_heading == -1:
+        return body[:start] + "\n" + content
+    return body[:start] + "\n" + content + body[next_heading:]
 
 
 def plan_epic(
@@ -257,7 +266,7 @@ def create_task(
 ) -> list[str]:
     """Create a Task under a story. Gate: story must exist."""
     primer = _primer_dir(project_dir)
-    _require_story(primer, story_id)
+    _require_ticket(primer, story_id, "story", "create ticket")
 
     task_id = next_id(primer, "task")
     today = datetime.now(tz=UTC).date()
@@ -294,7 +303,7 @@ def create_spike(
 ) -> list[str]:
     """Create a Spike under a story. Gate: story must exist."""
     primer = _primer_dir(project_dir)
-    _require_story(primer, story_id)
+    _require_ticket(primer, story_id, "story", "create ticket")
 
     spike_id = next_id(primer, "spike")
     today = datetime.now(tz=UTC).date()
@@ -330,17 +339,7 @@ def start_task(
 ) -> list[str]:
     """Transition a task to in-progress. Gate: task must exist and be in todo or blocked."""
     primer = _primer_dir(project_dir)
-    task_path = primer / "tasks" / f"{task_id}.md"
-    if not task_path.is_file():
-        existing = sorted(p.stem for p in (primer / "tasks").glob("TK-*.md"))
-        hint = (
-            f"Existing tasks: {', '.join(existing)}."
-            if existing
-            else "No tasks exist yet — create one with create_task first."
-        )
-        raise GateError(
-            f"Cannot start task: {task_id!r} not found. {hint}"
-        )
+    task_path = _require_ticket(primer, task_id, "task", "start task")
 
     ticket, body = loads_ticket(task_path.read_text(encoding="utf-8"))
     assert isinstance(ticket, Task)
@@ -361,4 +360,121 @@ def start_task(
     return [
         f"Started {task_id}: {ticket.title} (status: in-progress)",
         f'Next: call complete_task(task_id="{task_id}", notes="...") when done.',
+    ]
+
+
+def complete_task(
+    project_dir: Path,
+    task_id: str,
+    notes: str,
+) -> list[str]:
+    """Complete a task. Gate: task must be in-progress."""
+    primer = _primer_dir(project_dir)
+    task_path = _require_ticket(primer, task_id, "task", "complete task")
+
+    ticket, body = loads_ticket(task_path.read_text(encoding="utf-8"))
+    assert isinstance(ticket, Task)
+
+    if ticket.status == "todo":
+        raise GateError(
+            f"Cannot complete task: {task_id} has not been started. "
+            f'Call start_task(task_id="{task_id}") first.'
+        )
+    if ticket.status == "blocked":
+        raise GateError(
+            f"Cannot complete task: {task_id} is blocked. "
+            f"Resolve blockers before completing."
+        )
+    if ticket.status == "completed":
+        raise GateError(
+            f"Task {task_id} is already completed. "
+            f'Next: call verify_task(task_id="{task_id}", evidence="...").'
+        )
+    if ticket.status == "verified":
+        raise GateError(
+            f"Task {task_id} is already verified (terminal state)."
+        )
+
+    today = datetime.now(tz=UTC).date()
+    updated = ticket.model_copy(
+        update={"status": "completed", "completed_notes": notes, "updated": today}
+    )
+    body = _update_section(body, "Completion Notes", notes)
+    task_path.write_text(dumps_ticket(updated, body), encoding="utf-8")
+    return [
+        f"Completed {task_id}: {ticket.title} (status: completed)",
+        f'Next: call verify_task(task_id="{task_id}", evidence="...") with test output or proof.',
+    ]
+
+
+def verify_task(
+    project_dir: Path,
+    task_id: str,
+    evidence: str,
+) -> list[str]:
+    """Verify a completed task. Gate: task must be completed (two-phase gate)."""
+    primer = _primer_dir(project_dir)
+    task_path = _require_ticket(primer, task_id, "task", "verify task")
+
+    ticket, body = loads_ticket(task_path.read_text(encoding="utf-8"))
+    assert isinstance(ticket, Task)
+
+    if ticket.status in ("todo", "in-progress"):
+        raise GateError(
+            f"Cannot verify task: {task_id} has status {ticket.status!r}. "
+            f'Call complete_task(task_id="{task_id}", notes="...") first.'
+        )
+    if ticket.status == "blocked":
+        raise GateError(
+            f"Cannot verify task: {task_id} is blocked. "
+            f"Resolve blockers and complete the task before verifying."
+        )
+    if ticket.status == "verified":
+        raise GateError(
+            f"Task {task_id} is already verified (terminal state)."
+        )
+
+    today = datetime.now(tz=UTC).date()
+    updated = ticket.model_copy(
+        update={"status": "verified", "verified_evidence": evidence, "updated": today}
+    )
+    body = _update_section(body, "Verification Evidence", evidence)
+    task_path.write_text(dumps_ticket(updated, body), encoding="utf-8")
+    return [
+        f"Verified {task_id}: {ticket.title} (status: verified — done)",
+        f"Task {task_id} is complete. No further action needed.",
+    ]
+
+
+def complete_spike(
+    project_dir: Path,
+    spike_id: str,
+    findings: str,
+) -> list[str]:
+    """Complete a spike with findings. Gate: spike must be todo or in-progress."""
+    primer = _primer_dir(project_dir)
+    spike_path = _require_ticket(primer, spike_id, "spike", "complete spike")
+
+    ticket, body = loads_ticket(spike_path.read_text(encoding="utf-8"))
+    assert isinstance(ticket, Spike)
+
+    if ticket.status == "blocked":
+        raise GateError(
+            f"Cannot complete spike: {spike_id} is blocked. "
+            f"Resolve blockers before completing."
+        )
+    if ticket.status == "done":
+        raise GateError(
+            f"Spike {spike_id} is already done."
+        )
+
+    today = datetime.now(tz=UTC).date()
+    updated = ticket.model_copy(
+        update={"status": "done", "findings": findings, "updated": today}
+    )
+    body = _update_section(body, "Findings", findings)
+    spike_path.write_text(dumps_ticket(updated, body), encoding="utf-8")
+    return [
+        f"Completed {spike_id}: {ticket.title} (status: done)",
+        f"Findings recorded. Spike {spike_id} is closed.",
     ]

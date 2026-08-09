@@ -9,12 +9,15 @@ from primer_mcp.project import init_project
 from primer_mcp.storage import dumps_ticket, loads_ticket
 from primer_mcp.tickets import (
     GateError,
+    complete_spike,
+    complete_task,
     create_spike,
     create_story,
     create_task,
     plan_epic,
     record_adr,
     start_task,
+    verify_task,
 )
 
 EPIC_HEADINGS = [
@@ -365,4 +368,247 @@ class TestStartTask:
         )
         assert isinstance(ticket_before, Task)
         assert isinstance(ticket_after, Task)
+        assert ticket_after.updated >= ticket_before.updated
+
+
+def _make_in_progress_task(project: Path) -> str:
+    epic_id = make_epic(project)
+    make_adr(project, epic_id)
+    story_id = make_story(project, epic_id)
+    lines = create_task(project, story_id, "Do thing", "impl", "test passes")
+    task_id = lines[0].split()[1].rstrip(":")
+    start_task(project, task_id)
+    return task_id
+
+
+def _make_spike(project: Path) -> str:
+    epic_id = make_epic(project)
+    make_adr(project, epic_id)
+    story_id = make_story(project, epic_id)
+    lines = create_spike(project, story_id, "Investigate X", "Is X feasible?", "2 hours")
+    return lines[0].split()[1].rstrip(":")
+
+
+class TestCompleteTask:
+    def test_transitions_in_progress_to_completed(self, project: Path) -> None:
+        task_id = _make_in_progress_task(project)
+        lines = complete_task(project, task_id, "Implemented the feature")
+        assert "completed" in lines[0]
+        ticket, body = loads_ticket(
+            (project / f"primer/tasks/{task_id}.md").read_text()
+        )
+        assert isinstance(ticket, Task)
+        assert ticket.status == "completed"
+        assert ticket.completed_notes == "Implemented the feature"
+        assert "Implemented the feature" in body
+
+    def test_body_completion_notes_updated(self, project: Path) -> None:
+        task_id = _make_in_progress_task(project)
+        complete_task(project, task_id, "All tests pass")
+        _, body = loads_ticket(
+            (project / f"primer/tasks/{task_id}.md").read_text()
+        )
+        notes_pos = body.find("## Completion Notes")
+        evidence_pos = body.find("## Verification Evidence")
+        assert notes_pos < evidence_pos
+        section = body[notes_pos:evidence_pos]
+        assert "All tests pass" in section
+
+    def test_rejects_todo(self, project: Path) -> None:
+        epic_id = make_epic(project)
+        make_adr(project, epic_id)
+        story_id = make_story(project, epic_id)
+        lines = create_task(project, story_id, "t", "w", "o")
+        task_id = lines[0].split()[1].rstrip(":")
+        with pytest.raises(GateError, match="start_task"):
+            complete_task(project, task_id, "notes")
+
+    def test_rejects_blocked(self, project: Path) -> None:
+        task_id = _make_in_progress_task(project)
+        path = project / f"primer/tasks/{task_id}.md"
+        ticket, body = loads_ticket(path.read_text())
+        assert isinstance(ticket, Task)
+        path.write_text(
+            dumps_ticket(ticket.model_copy(update={"status": "blocked"}), body)
+        )
+        with pytest.raises(GateError, match="blocked"):
+            complete_task(project, task_id, "notes")
+
+    def test_rejects_already_completed(self, project: Path) -> None:
+        task_id = _make_in_progress_task(project)
+        complete_task(project, task_id, "done")
+        with pytest.raises(GateError, match="verify_task"):
+            complete_task(project, task_id, "done again")
+
+    def test_rejects_verified(self, project: Path) -> None:
+        task_id = _make_in_progress_task(project)
+        complete_task(project, task_id, "done")
+        verify_task(project, task_id, "proof")
+        with pytest.raises(GateError, match="verified"):
+            complete_task(project, task_id, "again")
+
+    def test_task_not_found(self, project: Path) -> None:
+        with pytest.raises(GateError, match="TK-999"):
+            complete_task(project, "TK-999", "notes")
+
+    def test_updated_date_refreshed(self, project: Path) -> None:
+        task_id = _make_in_progress_task(project)
+        ticket_before, _ = loads_ticket(
+            (project / f"primer/tasks/{task_id}.md").read_text()
+        )
+        complete_task(project, task_id, "done")
+        ticket_after, _ = loads_ticket(
+            (project / f"primer/tasks/{task_id}.md").read_text()
+        )
+        assert isinstance(ticket_before, Task)
+        assert isinstance(ticket_after, Task)
+        assert ticket_after.updated >= ticket_before.updated
+
+
+class TestVerifyTask:
+    def test_transitions_completed_to_verified(self, project: Path) -> None:
+        task_id = _make_in_progress_task(project)
+        complete_task(project, task_id, "done")
+        lines = verify_task(project, task_id, "pytest output: 5 passed")
+        assert "verified" in lines[0]
+        ticket, body = loads_ticket(
+            (project / f"primer/tasks/{task_id}.md").read_text()
+        )
+        assert isinstance(ticket, Task)
+        assert ticket.status == "verified"
+        assert ticket.verified_evidence == "pytest output: 5 passed"
+        assert "pytest output: 5 passed" in body
+
+    def test_body_verification_evidence_updated(self, project: Path) -> None:
+        task_id = _make_in_progress_task(project)
+        complete_task(project, task_id, "done")
+        verify_task(project, task_id, "All green")
+        _, body = loads_ticket(
+            (project / f"primer/tasks/{task_id}.md").read_text()
+        )
+        evidence_pos = body.find("## Verification Evidence")
+        assert evidence_pos != -1
+        section = body[evidence_pos:]
+        assert "All green" in section
+
+    def test_rejects_todo(self, project: Path) -> None:
+        epic_id = make_epic(project)
+        make_adr(project, epic_id)
+        story_id = make_story(project, epic_id)
+        lines = create_task(project, story_id, "t", "w", "o")
+        task_id = lines[0].split()[1].rstrip(":")
+        with pytest.raises(GateError, match="complete_task"):
+            verify_task(project, task_id, "evidence")
+
+    def test_rejects_in_progress(self, project: Path) -> None:
+        task_id = _make_in_progress_task(project)
+        with pytest.raises(GateError, match="complete_task"):
+            verify_task(project, task_id, "evidence")
+
+    def test_rejects_blocked(self, project: Path) -> None:
+        task_id = _make_in_progress_task(project)
+        path = project / f"primer/tasks/{task_id}.md"
+        ticket, body = loads_ticket(path.read_text())
+        assert isinstance(ticket, Task)
+        path.write_text(
+            dumps_ticket(ticket.model_copy(update={"status": "blocked"}), body)
+        )
+        with pytest.raises(GateError, match="blocked"):
+            verify_task(project, task_id, "evidence")
+
+    def test_rejects_already_verified(self, project: Path) -> None:
+        task_id = _make_in_progress_task(project)
+        complete_task(project, task_id, "done")
+        verify_task(project, task_id, "proof")
+        with pytest.raises(GateError, match="already verified"):
+            verify_task(project, task_id, "proof again")
+
+    def test_task_not_found(self, project: Path) -> None:
+        with pytest.raises(GateError, match="TK-999"):
+            verify_task(project, "TK-999", "evidence")
+
+    def test_updated_date_refreshed(self, project: Path) -> None:
+        task_id = _make_in_progress_task(project)
+        complete_task(project, task_id, "done")
+        ticket_before, _ = loads_ticket(
+            (project / f"primer/tasks/{task_id}.md").read_text()
+        )
+        verify_task(project, task_id, "proof")
+        ticket_after, _ = loads_ticket(
+            (project / f"primer/tasks/{task_id}.md").read_text()
+        )
+        assert isinstance(ticket_before, Task)
+        assert isinstance(ticket_after, Task)
+        assert ticket_after.updated >= ticket_before.updated
+
+
+class TestCompleteSpike:
+    def test_transitions_todo_to_done(self, project: Path) -> None:
+        spike_id = _make_spike(project)
+        lines = complete_spike(project, spike_id, "X is feasible")
+        assert "done" in lines[0]
+        ticket, body = loads_ticket(
+            (project / f"primer/spikes/{spike_id}.md").read_text()
+        )
+        assert isinstance(ticket, Spike)
+        assert ticket.status == "done"
+        assert ticket.findings == "X is feasible"
+        assert "X is feasible" in body
+
+    def test_transitions_in_progress_to_done(self, project: Path) -> None:
+        spike_id = _make_spike(project)
+        path = project / f"primer/spikes/{spike_id}.md"
+        ticket, body = loads_ticket(path.read_text())
+        assert isinstance(ticket, Spike)
+        path.write_text(
+            dumps_ticket(ticket.model_copy(update={"status": "in-progress"}), body)
+        )
+        complete_spike(project, spike_id, "Findings here")
+        reloaded, _ = loads_ticket(path.read_text())
+        assert isinstance(reloaded, Spike)
+        assert reloaded.status == "done"
+
+    def test_body_findings_updated(self, project: Path) -> None:
+        spike_id = _make_spike(project)
+        complete_spike(project, spike_id, "Answer: yes it works")
+        _, body = loads_ticket(
+            (project / f"primer/spikes/{spike_id}.md").read_text()
+        )
+        findings_pos = body.find("## Findings")
+        assert findings_pos != -1
+        section = body[findings_pos:]
+        assert "Answer: yes it works" in section
+
+    def test_rejects_blocked(self, project: Path) -> None:
+        spike_id = _make_spike(project)
+        path = project / f"primer/spikes/{spike_id}.md"
+        ticket, body = loads_ticket(path.read_text())
+        assert isinstance(ticket, Spike)
+        path.write_text(
+            dumps_ticket(ticket.model_copy(update={"status": "blocked"}), body)
+        )
+        with pytest.raises(GateError, match="blocked"):
+            complete_spike(project, spike_id, "findings")
+
+    def test_rejects_already_done(self, project: Path) -> None:
+        spike_id = _make_spike(project)
+        complete_spike(project, spike_id, "findings")
+        with pytest.raises(GateError, match="already done"):
+            complete_spike(project, spike_id, "more findings")
+
+    def test_spike_not_found(self, project: Path) -> None:
+        with pytest.raises(GateError, match="SP-999"):
+            complete_spike(project, "SP-999", "findings")
+
+    def test_updated_date_refreshed(self, project: Path) -> None:
+        spike_id = _make_spike(project)
+        ticket_before, _ = loads_ticket(
+            (project / f"primer/spikes/{spike_id}.md").read_text()
+        )
+        complete_spike(project, spike_id, "findings")
+        ticket_after, _ = loads_ticket(
+            (project / f"primer/spikes/{spike_id}.md").read_text()
+        )
+        assert isinstance(ticket_before, Spike)
+        assert isinstance(ticket_after, Spike)
         assert ticket_after.updated >= ticket_before.updated

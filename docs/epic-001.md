@@ -68,13 +68,15 @@ Generate a self-contained, browser-openable HTML file with an interactive graph.
 - Edges show hierarchy and dependency relationships
 - Click a node to see ticket details
 - Acceptance: file opens in browser with no external requests; graph renders correctly for a sample project
+- Open question: should the graph auto-regenerate on every ticket change? Current design is on-demand. Auto options: server-side (each tool triggers rebuild, adds coupling/latency) or client-side hook (Claude Code specific). Decide during implementation.
 
-### ST-009: MCP Prompts — `plan_story`, `export_jira`
+### ST-009: MCP Prompts — `plan_story`, `export_jira`, `import_jira`
 Implement the MCP Prompt primitives.
 - `plan_story`: scaffolds a planning conversation before a story is created; prompts for title, acceptance criteria, definition of done, dependencies
 - `export_jira`: scaffolds exporting tickets to Jira via the client's Jira MCP server, following the field mapping in `docs/architecture.md`; instructs the agent to record created issue keys in `external_ref` so re-export updates instead of duplicating
+- `import_jira`: scaffolds importing a Jira epic and its children into primer via the client's Jira MCP server; instructs the agent to traverse the Jira hierarchy, map issue types to primer types (Epic/Story/Task), create them locally in workflow-gate order (epic → ADR placeholder → stories → tasks), and record Jira issue keys in `external_ref` so future exports update rather than duplicate
 - Works in any MCP client
-- Acceptance: both prompts are registered and returned correctly by the server
+- Acceptance: all three prompts are registered and returned correctly by the server
 
 ### ST-010: Test sweep — coverage gaps and MCP integration
 Stories ST-002 onward land with their own unit tests in their PRs (see CLAUDE.md); this story audits the accumulated suite and completes it.
@@ -99,3 +101,11 @@ GitHub Actions workflow covering quality gates and release.
 - On push/PR: `ruff check`, `ruff format --check`, `mypy`, `pytest` on a matrix of Python 3.12, 3.13, 3.14
 - On tag: build and publish to PyPI (trusted publishing)
 - Acceptance: workflow green on main; a test tag publishes to TestPyPI
+
+### ST-013: Portfolio framing — AI-orchestrated development showcase
+Add a README section that frames the repo as a demonstration of AI-orchestrated development for portfolio use.
+- Explain which decisions were the author's (architecture, workflow design, gates) vs AI-generated code
+- Describe the human–AI workflow: planning-first, two-phase completion, how the agent was directed
+- Note what was learned and what the co-author tags represent (transparency, not delegation)
+- Tone: thesis statement, not apology — "here's how I ship with AI" not "AI helped me"
+- Acceptance: README contains a clearly authored section that a hiring manager at an AI company would read as evidence of orchestration skill

@@ -3,6 +3,31 @@
 ## Goals
 Build a working, published MCP server that enforces planning-first workflows for AI-assisted development. See `docs/planning.md` for full goals, constraints, and success criteria.
 
+## Status of this document
+
+**Historical record only, from ST-007 onward.** The live backlog now lives in
+`primer/`, migrated with primer-mcp's own tools. This file remains the record
+for ST-001 through ST-006, which were completed before the ticket store existed
+and cannot be imported — `done` is derived from child tasks, and there is no
+tool to assert a story was already finished.
+
+The store renumbered from `ST-001` on migration, so story numbers in this file
+do **not** match the store. The numbers overlap rather than simply offset:
+
+| This document | In `primer/` | Story |
+|---|---|---|
+| ST-001 – ST-006 | — | completed pre-migration; not in the store |
+| ST-007 | `ST-001` | Query and graph tools |
+| ST-008 | `ST-002` | `export_graph` — vis.js HTML output |
+| ST-009 | `ST-003` | MCP Prompts |
+| ST-010 | `ST-004` | Test sweep |
+| ST-011 | `ST-005` | README, registry submission |
+| ST-012 | `ST-006` | CI pipeline |
+| ST-013 | `ST-007` | Portfolio framing |
+| ST-014 | `ST-008` | `reopen_task` (added during ST-007 planning) |
+
+Quote store IDs when working; quote this document only for history.
+
 ## Stories
 
 ### ST-001: Project scaffolding, uv environment, and packaging
@@ -109,3 +134,13 @@ Add a README section that frames the repo as a demonstration of AI-orchestrated 
 - Note what was learned and what the co-author tags represent (transparency, not delegation)
 - Tone: thesis statement, not apology — "here's how I ship with AI" not "AI helped me"
 - Acceptance: README contains a clearly authored section that a hiring manager at an AI company would read as evidence of orchestration skill
+
+### ST-014: `reopen_task` — reversing a verified task
+Add an explicit tool for when a verified task's fix did not hold. Deliberately not a generic `update_ticket` status edit — ST-007 rejects status changes on terminal tickets so that reopening is always an intentional, recorded act.
+- `reopen_task(task_id, reason)`: gates on status `verified`; returns the task to `todo` and records the reason
+- Prior `verified_evidence` is preserved in the body — it was true when written, so it is superseded rather than deleted
+- Cascades upward: parent story and epic revert from `done` to `in-progress` via ST-007's `recompute_parents`
+- No cascade to dependents: `blocked_by` readiness is computed per call, so tickets depending on the reopened task stop being offered automatically, with no writes
+- Open question: should spikes be reopenable too? `complete_spike` is likewise terminal
+- Acceptance: reopening the last verified task of a done story reverts both story and epic; a ticket `blocked_by` the reopened task is no longer offered by `get_next_action`; reopening a non-verified task fails with an actionable error naming the current status
+- Blocked by: ST-007 (needs `recompute_parents` and the graph layer)

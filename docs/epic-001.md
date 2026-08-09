@@ -3,30 +3,20 @@
 ## Goals
 Build a working, published MCP server that enforces planning-first workflows for AI-assisted development. See `docs/planning.md` for full goals, constraints, and success criteria.
 
-## Status of this document
+## Archived — the live backlog is `primer/`
 
-**Historical record only, from ST-007 onward.** The live backlog now lives in
-`primer/`, migrated with primer-mcp's own tools. This file remains the record
-for ST-001 through ST-006, which were completed before the ticket store existed
-and cannot be imported — `done` is derived from child tasks, and there is no
-tool to assert a story was already finished.
+This document is history. From ST-007 onward the backlog lives in `primer/`,
+created with primer-mcp's own tools, and that is the only reference to quote
+when working.
 
-The store renumbered from `ST-001` on migration, so story numbers in this file
-do **not** match the store. The numbers overlap rather than simply offset:
+ST-001 through ST-006 were finished before the store existed and were not
+migrated: `done` is derived from child tasks and no tool asserts it, so
+completed history cannot be imported.
 
-| This document | In `primer/` | Story |
-|---|---|---|
-| ST-001 – ST-006 | — | completed pre-migration; not in the store |
-| ST-007 | `ST-001` | Query and graph tools |
-| ST-008 | `ST-002` | `export_graph` — vis.js HTML output |
-| ST-009 | `ST-003` | MCP Prompts |
-| ST-010 | `ST-004` | Test sweep |
-| ST-011 | `ST-005` | README, registry submission |
-| ST-012 | `ST-006` | CI pipeline |
-| ST-013 | `ST-007` | Portfolio framing |
-| ST-014 | `ST-008` | `reopen_task` (added during ST-007 planning) |
-
-Quote store IDs when working; quote this document only for history.
+The remaining stories migrated in order, so **ST-007 through ST-014 here are
+ST-001 through ST-008 in the store**. The numbers overlap rather than offset —
+this document's ST-013 is the store's ST-007 — so old commit messages and this
+file mean something different by "ST-007" than the store does.
 
 ## Stories
 

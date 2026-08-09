@@ -57,13 +57,11 @@ mypy                 # type checking (dev)
 Done: ST-001 (scaffolding), ST-002 (schema/models), ST-003 (`init_project`), ST-004 (MCP server + `plan_epic`/`record_adr`), ST-005 (execution tools), ST-006 (completion tools `complete_task`, `verify_task`, `complete_spike`).
 Next: ST-007 — query and graph tools `get_next_action`, `get_ticket`, `list_tickets`, `update_ticket`.
 
-**Two ID spaces — read this before quoting a story number.** `docs/epic-001.md`
-is the historical record for ST-001 through ST-006, which predate the ticket
-store. From ST-007 onward the live backlog is `primer/`, which renumbered from
-`ST-001` on migration. The numbers collide: doc `ST-007` is store `ST-001`,
-and doc `ST-013` is store `ST-007`. See the mapping table in
-`docs/epic-001.md`. Inside tickets, refer to other stories by name rather than
-ID until the doc numbering is retired.
+**The live backlog is `primer/` — quote store IDs, not doc IDs.**
+`docs/epic-001.md` is archived history for ST-001 through ST-006. Its ST-007
+through ST-014 are the store's ST-001 through ST-008, so the two number spaces
+overlap: doc `ST-013` is store `ST-007`. Old commit messages use doc numbering.
+Inside tickets, cross-reference other stories by name rather than ID.
 
 ## primer-mcp
 

@@ -7,8 +7,8 @@ Build a working, published MCP server that enforces planning-first workflows for
 
 Story IDs here match the store exactly — ST-007 is ST-007 in both. This file
 keeps the prose descriptions; `primer/` carries status, tasks, dependencies and
-the ADRs. Create and update tickets through the tools, never by hand-editing
-either.
+the ADRs. Prefer the tools for creating and updating tickets; hand-edit where
+they fall short, but never to set a status the workflow owns.
 
 ST-001 through ST-006 were delivered before the store existed. Rather than
 leave them out, each was back-filled with one summary task walked through the

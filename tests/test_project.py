@@ -4,7 +4,13 @@ from pathlib import Path
 
 import yaml
 
-from primer_mcp.project import SNIPPET_HEADING, SUBDIRS, init_project
+from primer_mcp.models import SCHEMA_VERSION
+from primer_mcp.project import (
+    SNIPPET_HEADING,
+    SUBDIRS,
+    init_project,
+    require_store,
+)
 
 
 def tree_snapshot(root: Path) -> dict[str, bytes]:
@@ -29,12 +35,16 @@ class TestConfig:
     def test_config_without_jira_key(self, tmp_path: Path) -> None:
         init_project(tmp_path, "demo")
         config = yaml.safe_load((tmp_path / "primer" / "config.yaml").read_text())
-        assert config == {"project_name": "demo"}
+        assert config == {"project_name": "demo", "schema_version": SCHEMA_VERSION}
 
     def test_config_with_jira_key(self, tmp_path: Path) -> None:
         init_project(tmp_path, "demo", jira_project_key="PROJ")
         config = yaml.safe_load((tmp_path / "primer" / "config.yaml").read_text())
-        assert config == {"project_name": "demo", "jira": {"project_key": "PROJ"}}
+        assert config == {
+            "project_name": "demo",
+            "schema_version": SCHEMA_VERSION,
+            "jira": {"project_key": "PROJ"},
+        }
 
     def test_existing_config_never_overwritten(self, tmp_path: Path) -> None:
         init_project(tmp_path, "demo")
@@ -79,3 +89,18 @@ class TestIdempotency:
         first = tree_snapshot(tmp_path)
         init_project(tmp_path, "demo", jira_project_key="PROJ")
         assert tree_snapshot(tmp_path) == first
+
+
+class TestSchemaVersion:
+    def test_new_store_is_stamped(self, tmp_path: Path) -> None:
+        # Recorded, never enforced — nothing gates on it. It exists only
+        # because a stamp cannot be added retroactively.
+        init_project(tmp_path, "demo")
+        config = yaml.safe_load((tmp_path / "primer" / "config.yaml").read_text())
+        assert config["schema_version"] == SCHEMA_VERSION
+
+    def test_store_from_another_version_still_opens(self, tmp_path: Path) -> None:
+        init_project(tmp_path, "demo")
+        config = tmp_path / "primer" / "config.yaml"
+        config.write_text(f"project_name: demo\nschema_version: {SCHEMA_VERSION + 100}\n")
+        assert require_store(tmp_path).is_dir()

@@ -92,12 +92,13 @@ class TestEdges:
         with pytest.raises(ValidationError, match="dependency edge"):
             Task(**valid_kwargs(Task), blocked_by=["banana"])
 
-    def test_blocks_field_is_gone(self) -> None:
+    def test_blocks_is_no_longer_a_field(self) -> None:
         # blocked_by is the only stored edge; "A blocks B" is recorded on B.
-        # extra="forbid" turns a stale `blocks:` key into a clear failure
-        # rather than a silently ignored field.
-        with pytest.raises(ValidationError):
-            Task(**valid_kwargs(Task), blocks=["TK-002"])
+        # A stale `blocks:` from an older store is carried along inertly
+        # rather than rejected, so removing the field broke no one.
+        task = Task(**valid_kwargs(Task), blocks=["TK-002"])
+        assert not hasattr(task, "blocked_by_reverse")
+        assert task.model_dump()["blocks"] == ["TK-002"]
 
 
 class TestStrictness:
@@ -107,9 +108,13 @@ class TestStrictness:
         with pytest.raises(ValidationError):
             Adr(**kwargs)
 
-    def test_unknown_extra_key_rejected(self) -> None:
-        with pytest.raises(ValidationError):
-            Epic(**valid_kwargs(Epic), priority="high")
+    def test_unknown_key_survives_a_round_trip(self) -> None:
+        # Data gets tolerance, workflow gets gates. An unrecognised key — a
+        # field from a newer primer-mcp, or a hand-edit typo — is preserved
+        # and written back, so no build can silently discard what it does
+        # not understand and no stale key can block a whole store.
+        epic = Epic(**valid_kwargs(Epic), priority="high")
+        assert epic.model_dump()["priority"] == "high"
 
 
 class TestDiscriminatedUnion:

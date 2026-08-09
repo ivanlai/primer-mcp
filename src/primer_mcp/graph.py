@@ -75,8 +75,10 @@ def load_tickets(project_dir: Path) -> dict[str, Ticket]:
                 ticket, _ = loads_ticket(path.read_text(encoding="utf-8"))
             except ValidationError as err:
                 raise GateError(
-                    f"Cannot read the ticket store: {path} is not a valid ticket. "
-                    f"Fix the file by hand or remove it, then retry. Details: {err}"
+                    f"Cannot read the ticket store: {path} does not match the "
+                    f"schema this primer-mcp expects. If it was edited by hand, "
+                    f"restore it from version control (git checkout -- {path}). "
+                    f"Details: {err}"
                 ) from err
             tickets[ticket.id] = ticket
     return tickets

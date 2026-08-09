@@ -14,6 +14,7 @@ from pathlib import Path
 import frontmatter
 
 from primer_mcp.errors import GateError
+from primer_mcp.graph import recompute_parents
 from primer_mcp.models import ID_PREFIX, Adr, Epic, Spike, Story, Task
 from primer_mcp.project import SUBDIR_FOR_TYPE, require_store
 from primer_mcp.storage import dumps_ticket, loads_ticket
@@ -229,6 +230,7 @@ def create_story(
     return [
         f"Created {story_id}: {title} ({path})",
         f'Next: create tasks with create_task(story_id="{story_id}", ...).',
+        *recompute_parents(project_dir, story_id),
     ]
 
 
@@ -266,6 +268,7 @@ def create_task(
     return [
         f"Created {task_id}: {title} ({path})",
         f'Next: call start_task(task_id="{task_id}") when you begin work.',
+        *recompute_parents(project_dir, task_id),
     ]
 
 
@@ -305,6 +308,7 @@ def create_spike(
             f"Timebox: {timebox}. When done, call "
             f'complete_spike(spike_id="{spike_id}", findings="...").'
         ),
+        *recompute_parents(project_dir, spike_id),
     ]
 
 
@@ -418,6 +422,7 @@ def verify_task(
     return [
         f"Verified {task_id}: {ticket.title} (status: verified — done)",
         f"Task {task_id} is complete. No further action needed.",
+        *recompute_parents(project_dir, task_id),
     ]
 
 
@@ -452,4 +457,5 @@ def complete_spike(
     return [
         f"Completed {spike_id}: {ticket.title} (status: done)",
         f"Findings recorded. Spike {spike_id} is closed.",
+        *recompute_parents(project_dir, spike_id),
     ]

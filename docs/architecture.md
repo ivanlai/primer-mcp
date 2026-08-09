@@ -18,6 +18,8 @@
 | Jira interop | Field-mapping doc + `export_jira` prompt + optional `external_ref` field | Jira REST client in the server | Zero new dependencies; any Jira MCP client does the writing; preserves the no-provider-SDK constraint |
 | vis.js delivery | Vendored copy (MIT, ~700KB) bundled in the package | CDN `<script>` tag | "Fully offline" and "no external requests" require it; MIT licence permits redistribution |
 | Gate error style | Actionable, agent-steering messages | Plain refusals | The consumer of every error is an AI agent mid-task; the error text is the steering surface |
+| Frontmatter strictness | Unknown keys tolerated and round-tripped (`extra="allow"`) | `extra="forbid"`, `extra="ignore"` | Strictness made every field removal a breaking change needing a migration, and let one stale key block a whole store; `ignore` silently deletes what it does not understand. Data gets tolerance, workflow gets gates (ADR-007) |
+| Hand-editing | Allowed for anything except a status the workflow owns | Tools-only authoring | The store is markdown in the user's own git repo, and "editable without the tool" is why that format was chosen. Claiming exclusive write access is the lock-in this project avoids (ADR-007) |
 | Priority | No priority field; deterministic ordering | `priority` frontmatter field | Single-user, small projects; topological order + oldest-ID-first is predictable and needs no upkeep |
 
 ## Storage Layout
@@ -27,7 +29,7 @@ All primer-mcp data lives in a `primer/` directory within the user's project —
 ```
 {project_dir}/
 └── primer/
-    ├── config.yaml          # project name + optional Jira project key, created by init_project
+    ├── config.yaml          # project name, schema version, optional Jira project key
     ├── epics/
     │   └── EP-001.md
     ├── adrs/
@@ -42,7 +44,7 @@ All primer-mcp data lives in a `primer/` directory within the user's project —
 
 ## Ticket Schema
 
-All ticket types share a common frontmatter base. Type-specific fields are additive.
+All ticket types share a common frontmatter base. Type-specific fields are additive. Unrecognised keys are preserved rather than rejected, so a store stays readable across versions and a field can be removed without breaking every ticket (ADR-007).
 
 ```yaml
 # Common fields (all types) — including graph edges
@@ -53,8 +55,8 @@ status: todo | in-progress | blocked | completed | verified | done
                   # allowed values vary by type — see Ticket Lifecycle below
 created: ISO8601 date
 updated: ISO8601 date
-blocks: []        # list of ticket IDs this ticket blocks (any type)
 blocked_by: []    # list of ticket IDs blocking this ticket (any type)
+                  # the only stored edge — "A blocks B" is recorded on B (ADR-004)
 external_ref: {}  # optional, e.g. {jira: PROJ-123} — set after export, makes re-export idempotent
 
 # Epic-specific
@@ -92,12 +94,14 @@ findings: string
 
 Any type may be `blocked` at any pre-terminal point. Terminal states per type:
 
-- **Epic / Story:** `todo → in-progress → done`. `done` is derived, never set directly: a story is done when all child tasks are `verified` and all child spikes are `done`; an epic is done when all child stories are done. `get_next_action` applies this rule.
+- **Epic / Story:** `todo → in-progress → done`. `done` is derived, never set directly: a story is done when all child tasks are `verified` and all child spikes are `done`; an epic is done when all child stories are done. Derived status is *written to the file* by the tools that change a child, in both directions — finishing the last child settles its parents, adding a new one reopens them (ADR-002). Read tools therefore report stored status and derive nothing. Done requires at least one child, so a childless story is never vacuously done.
 - **ADR:** created as `done` — an ADR records a decision already made. It has no active lifecycle.
 - **Task:** `todo → in-progress → completed → verified`. `complete_task` sets `completed`; `verify_task` requires status `completed` and sets `verified` (terminal). The intermediate `completed` state is what makes the two-phase gate checkable from state alone.
-- **Spike:** `todo → in-progress → done`. `complete_spike` records findings and sets `done`.
+- **Spike:** `todo → done`. `complete_spike` records findings and sets `done`. There is no `start_spike`, so `in-progress` is unreachable for spikes, and an open spike does not gate the tasks beside it — use `blocked_by` where one genuinely must come first (ADR-006).
 
-There is no `priority` field. `get_next_action` orders work deterministically: unmet workflow gates first, then unblocked tickets in topological order of the dependency graph, oldest ID first.
+`status: blocked` and `blocked_by` are separate mechanisms and `blocked` is never derived (ADR-003). A ticket waiting on another ticket keeps `status: todo` and is simply not offered; readiness is computed from the graph on every call. `blocked` is reserved for blockers with no ticket — waiting on credentials, on a review — which the graph cannot express.
+
+There is no `priority` field. `get_next_action` walks a fixed order and returns on the first match, so the answer is one instruction rather than a list: unmet gates first, scoped to the oldest epic that is not done; task-state gates (`completed` awaiting verification, then `in-progress`) before creation gates; ready work before planning more work; then the blockers, named. The last two orderings were decisions rather than accidents — see ADR-001.
 
 ## Ticket Body Templates
 
@@ -212,8 +216,9 @@ Graph edges are first-class citizens — every ticket type participates in the g
 - `story_id` on Task/Spike → Story is parent of Task/Spike
 
 **Dependency edges** (explicit, stored in frontmatter):
-- `blocks: [TK-002, ST-003]` — this ticket must be done before those tickets
 - `blocked_by: [EP-001]` — this ticket cannot start until those tickets are done
+
+`blocked_by` is the only stored edge. "A blocks B" and "B is blocked by A" are one directed edge stated from two ends, so storing both invites a disagreement nothing can resolve; the reverse direction is a graph lookup at read time, which `get_ticket` reports (ADR-004).
 
 Both edge types are loaded into a `networkx.DiGraph` at query time (edge type stored as an edge attribute). This graph is the source of truth for:
 - `get_next_action` — finds unblocked, ready tickets
@@ -222,7 +227,7 @@ Both edge types are loaded into a `networkx.DiGraph` at query time (edge type st
 
 Cycle detection runs on **dependency edges only**. A child story blocking its parent epic forms a cycle in the combined graph but is semantically fine — hierarchy edges are excluded from the check.
 
-IDs are globally unique across all ticket types (EP-, ADR-, ST-, TK-, SP- prefixes), so any ticket can reference any other ticket in `blocks`/`blocked_by`.
+IDs are globally unique across all ticket types (EP-, ADR-, ST-, TK-, SP- prefixes), so any ticket can reference any other ticket in `blocked_by`.
 
 ## Workflow Gates
 
@@ -260,7 +265,7 @@ primer-mcp is for people who dislike Jira — but sometimes the team still needs
 | `title` | Summary |
 | markdown body | Description |
 | `acceptance_criteria` | Description checklist (or AC custom field if configured) |
-| `blocks` / `blocked_by` | Native issue links "blocks" / "is blocked by" |
+| `blocked_by` | Native issue links "blocks" / "is blocked by" — one stored edge emits both directions |
 | `status` | `todo` → To Do, `in-progress` → In Progress, `completed`/`verified`/`done` → Done, `blocked` → flagged |
 
 Jira workflows vary per instance; the `export_jira` prompt instructs the agent to map each status to the nearest available column rather than assuming these exact names.

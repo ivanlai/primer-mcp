@@ -6,15 +6,15 @@ A Jira-lite MCP server that enforces planning-first workflows for AI-assisted de
 
 - `docs/planning.md` — goals, constraints, non-goals, success criteria
 - `docs/architecture.md` — all key decisions, ticket schema, graph protocol, body templates
-- `docs/epic-001.md` — the single epic and all draft stories (ST-001 through ST-011)
+- `docs/epic-001.md` — prose descriptions of the stories; `primer/` is the live backlog
 
 ## Key conventions
 
 - **Language:** Python, packaged with `uv`, distributed via `uvx`
-- **Data store:** Markdown + YAML frontmatter in `primer/` directory (visible, not dot-hidden; gitignored in THIS repo until the backlog migrates post-ST-005)
+- **Data store:** Markdown + YAML frontmatter in `primer/` (visible, not dot-hidden, and committed — this repo dogfoods its own store)
 - **No provider-specific code** — server must be MCP-protocol-only, no Anthropic/OpenAI SDK calls
 - **Ticket body templates** are defined in `docs/architecture.md` — follow them exactly when generating ticket files
-- **Graph edges** (`blocks`, `blocked_by`) are base fields on ALL ticket types, not just tasks
+- **Graph edges**: `blocked_by` is a base field on ALL ticket types, not just tasks. It is the only stored edge — "A blocks B" is recorded on B (ADR-004)
 - **Two-phase completion:** `complete_task` then `verify_task` — do not collapse into one step
 
 ## Workflow gates (enforced by the server — never bypass)
@@ -32,6 +32,8 @@ A Jira-lite MCP server that enforces planning-first workflows for AI-assisted de
 - No filler tests. Every test must verify a real behaviour or acceptance criterion and be able to fail for a real reason — never add tests for coverage's or quantity's sake
 - Tasks must be completable in a single session (~3 files max)
 - One PR per task
+- Ask before committing and before pushing — the user reviews the working diff, not the PR page
+- Improvements and simplifications wait until after v0 ships. This is a compact project that showcases the workflow, not an enterprise system; a heavier primer-mcp has no reason to exist when Jira already does
 - Completion is two-phase: `complete_task` with notes, then `verify_task` with evidence. Both are required
 - **Tickets hold what git cannot; they never restate it.** Intent before the work — `testable_outcome`, acceptance criteria, an ADR's rejected alternatives — has no other home. What happened, and how, is git's job. So keep ticket bodies at overview level: the goal, not the implementation. Notes and evidence stay one line and point at the commit (`"126 passed, mypy clean — c4ac39f"`) rather than retelling it. Duplicating git is what makes Jira miserable, and detail written before the work is what makes tickets lie: TK-007 listed the functions it would add, the real implementation added others, and `verified` is terminal so it says so permanently
 - Detail is safe where the content describes a moment rather than a state, which is why ADRs are the exception: a rejected alternative stays true forever, and a reversal is a new ADR superseding the old one, not an edit
@@ -54,15 +56,38 @@ ruff                 # lint + format (dev)
 mypy                 # type checking (dev)
 ```
 
-## Story status
+## Where things stand
 
-Done: ST-001 (scaffolding), ST-002 (schema/models), ST-003 (`init_project`), ST-004 (MCP server + `plan_epic`/`record_adr`), ST-005 (execution tools), ST-006 (completion tools `complete_task`, `verify_task`, `complete_spike`).
-Next: ST-007 — query and graph tools `get_next_action`, `get_ticket`, `list_tickets`, `update_ticket`.
+**Start by calling `get_next_action`** — the tool now answers for this repo's
+own backlog, so it will tell you what is next rather than you deciding.
+
+Done: ST-001 to ST-006 (scaffolding, models, `init_project`, planning tools,
+execution tools, completion tools), ST-007 (query and graph tools), ST-015
+(tolerant schema + version stamp). All 14 tools are registered and reachable
+over MCP; 188 tests, mypy strict and ruff clean.
+
+Open: ST-008 `export_graph`, ST-009 MCP Prompts, ST-010 test sweep, ST-011
+README and publish, ST-012 CI, ST-013 portfolio framing, ST-014 `reopen_task`,
+ST-016 `adr_ids` on stories.
+
+Two things waiting to be picked up, neither urgent:
+
+- **ST-016 was deliberately parked** until `update_ticket` existed. It does
+  now, so `adr_ids` can ship settable and amendable together, with the
+  fourteen existing stories backfilled in one pass.
+- **ST-011's review pass has a known target**: `verify_task`'s tool
+  description still asks for test output, which contradicts the
+  evidence-points-at-the-commit rule below. Tool descriptions are the model's
+  steering surface, so the rule does not take effect until they are rewritten.
 
 The live backlog is `primer/`; `docs/epic-001.md` keeps the prose descriptions.
 Story IDs match across both — ST-007 means the query and graph tools story
 everywhere. ST-001 through ST-006 were back-filled during migration with one
 summary task each, carrying their real merge commits as verification evidence.
+
+Decisions live in `primer/adrs/` (ADR-001 to ADR-007) with the alternatives
+that were rejected. Read those before reopening a settled question — several
+were argued through at length and the reasoning is not in the code.
 
 ## primer-mcp
 

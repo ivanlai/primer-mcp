@@ -341,12 +341,14 @@ def start_task(
 
     if ticket.status == "in-progress":
         raise GateError(
-            f"Task {task_id} is already in-progress."
+            f"Task {task_id} is already in-progress. "
+            f'Call complete_task(task_id="{task_id}", notes="...") when the work is done.'
         )
     if ticket.status in ("completed", "verified"):
         raise GateError(
             f"Cannot start task: {task_id} has status {ticket.status!r} "
-            f"and cannot go back to in-progress."
+            f"and cannot go back to in-progress. "
+            f"Create a follow-up task under the same story if more work is needed."
         )
 
     today = datetime.now(tz=UTC).date()
@@ -380,7 +382,8 @@ def complete_task(
     if ticket.status == "blocked":
         raise GateError(
             f"Cannot complete task: {task_id} is blocked. "
-            f"Resolve blockers before completing."
+            f'Call get_ticket(ticket_id="{task_id}") to see what blocks it, '
+            f"then resolve or remove the edges with update_ticket."
         )
     if ticket.status == "completed":
         raise GateError(
@@ -389,7 +392,8 @@ def complete_task(
         )
     if ticket.status == "verified":
         raise GateError(
-            f"Task {task_id} is already verified (terminal state)."
+            f"Task {task_id} is already verified (terminal state). "
+            f"Create a follow-up task if more work is needed."
         )
 
     today = datetime.now(tz=UTC).date()
@@ -426,11 +430,13 @@ def verify_task(
     if ticket.status == "blocked":
         raise GateError(
             f"Cannot verify task: {task_id} is blocked. "
-            f"Resolve blockers and complete the task before verifying."
+            f'Call get_ticket(ticket_id="{task_id}") to see what blocks it, '
+            f"then resolve the blockers and call complete_task before verifying."
         )
     if ticket.status == "verified":
         raise GateError(
-            f"Task {task_id} is already verified (terminal state)."
+            f"Task {task_id} is already verified (terminal state). "
+            f"Create a follow-up task if more work is needed."
         )
 
     today = datetime.now(tz=UTC).date()
@@ -463,11 +469,13 @@ def complete_spike(
     if ticket.status == "blocked":
         raise GateError(
             f"Cannot complete spike: {spike_id} is blocked. "
-            f"Resolve blockers before completing."
+            f'Call get_ticket(ticket_id="{spike_id}") to see what blocks it, '
+            f"then resolve or remove the edges with update_ticket."
         )
     if ticket.status == "done":
         raise GateError(
-            f"Spike {spike_id} is already done."
+            f"Spike {spike_id} is already done. "
+            f"Create a follow-up spike under the same story if the question has changed."
         )
 
     today = datetime.now(tz=UTC).date()

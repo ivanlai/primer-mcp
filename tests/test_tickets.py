@@ -8,7 +8,6 @@ import pytest
 
 from primer_mcp.graph import find_path
 from primer_mcp.models import Adr, Epic, Spike, Story, Task
-from primer_mcp.project import init_project
 from primer_mcp.storage import dumps_ticket, loads_ticket
 from primer_mcp.tickets import (
     GateError,
@@ -40,11 +39,6 @@ ADR_HEADINGS = [
     "## Consequences",
 ]
 
-
-@pytest.fixture
-def project(tmp_path: Path) -> Path:
-    init_project(tmp_path, "demo")
-    return tmp_path
 
 
 def make_epic(project: Path, title: str = "First epic") -> str:
@@ -331,8 +325,9 @@ class TestStartTask:
     def test_rejects_already_in_progress(self, project: Path) -> None:
         task_id = self._make_task(project)
         start_task(project, task_id)
-        with pytest.raises(GateError, match="already in-progress"):
+        with pytest.raises(GateError, match="already in-progress") as exc_info:
             start_task(project, task_id)
+        assert "complete_task" in str(exc_info.value)
 
     def test_rejects_completed(self, project: Path) -> None:
         task_id = self._make_task(project)
@@ -342,8 +337,9 @@ class TestStartTask:
         completed = ticket.model_copy(update={"status": "completed"})
         path.write_text(dumps_ticket(completed, body), encoding="utf-8")
 
-        with pytest.raises(GateError, match="cannot go back"):
+        with pytest.raises(GateError, match="cannot go back") as exc_info:
             start_task(project, task_id)
+        assert "follow-up task" in str(exc_info.value)
 
     def test_rejects_verified(self, project: Path) -> None:
         task_id = self._make_task(project)
@@ -353,8 +349,9 @@ class TestStartTask:
         verified = ticket.model_copy(update={"status": "verified"})
         path.write_text(dumps_ticket(verified, body), encoding="utf-8")
 
-        with pytest.raises(GateError, match="cannot go back"):
+        with pytest.raises(GateError, match="cannot go back") as exc_info:
             start_task(project, task_id)
+        assert "follow-up task" in str(exc_info.value)
 
     def test_gate_task_not_found(self, project: Path) -> None:
         with pytest.raises(GateError, match="TK-999"):
@@ -434,8 +431,10 @@ class TestCompleteTask:
         path.write_text(
             dumps_ticket(ticket.model_copy(update={"status": "blocked"}), body)
         )
-        with pytest.raises(GateError, match="blocked"):
+        with pytest.raises(GateError, match="blocked") as exc_info:
             complete_task(project, task_id, "notes")
+        assert "get_ticket" in str(exc_info.value)
+        assert "update_ticket" in str(exc_info.value)
 
     def test_rejects_already_completed(self, project: Path) -> None:
         task_id = _make_in_progress_task(project)
@@ -447,8 +446,9 @@ class TestCompleteTask:
         task_id = _make_in_progress_task(project)
         complete_task(project, task_id, "done")
         verify_task(project, task_id, "proof")
-        with pytest.raises(GateError, match="verified"):
+        with pytest.raises(GateError, match="verified") as exc_info:
             complete_task(project, task_id, "again")
+        assert "follow-up task" in str(exc_info.value)
 
     def test_task_not_found(self, project: Path) -> None:
         with pytest.raises(GateError, match="TK-999"):
@@ -516,15 +516,18 @@ class TestVerifyTask:
         path.write_text(
             dumps_ticket(ticket.model_copy(update={"status": "blocked"}), body)
         )
-        with pytest.raises(GateError, match="blocked"):
+        with pytest.raises(GateError, match="blocked") as exc_info:
             verify_task(project, task_id, "evidence")
+        assert "get_ticket" in str(exc_info.value)
+        assert "complete_task" in str(exc_info.value)
 
     def test_rejects_already_verified(self, project: Path) -> None:
         task_id = _make_in_progress_task(project)
         complete_task(project, task_id, "done")
         verify_task(project, task_id, "proof")
-        with pytest.raises(GateError, match="already verified"):
+        with pytest.raises(GateError, match="already verified") as exc_info:
             verify_task(project, task_id, "proof again")
+        assert "follow-up task" in str(exc_info.value)
 
     def test_task_not_found(self, project: Path) -> None:
         with pytest.raises(GateError, match="TK-999"):
@@ -590,14 +593,17 @@ class TestCompleteSpike:
         path.write_text(
             dumps_ticket(ticket.model_copy(update={"status": "blocked"}), body)
         )
-        with pytest.raises(GateError, match="blocked"):
+        with pytest.raises(GateError, match="blocked") as exc_info:
             complete_spike(project, spike_id, "findings")
+        assert "get_ticket" in str(exc_info.value)
+        assert "update_ticket" in str(exc_info.value)
 
     def test_rejects_already_done(self, project: Path) -> None:
         spike_id = _make_spike(project)
         complete_spike(project, spike_id, "findings")
-        with pytest.raises(GateError, match="already done"):
+        with pytest.raises(GateError, match="already done") as exc_info:
             complete_spike(project, spike_id, "more findings")
+        assert "follow-up spike" in str(exc_info.value)
 
     def test_spike_not_found(self, project: Path) -> None:
         with pytest.raises(GateError, match="SP-999"):

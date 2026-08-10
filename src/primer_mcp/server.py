@@ -34,9 +34,7 @@ directly where the tools fall short.
 """
 
 
-def _gated(fn: Callable[..., list[str]], *args: Any) -> str:
-    # Joins the list[str] response and converts GateError to a tool response.
-
+def _call(fn: Callable[..., list[str]], *args: Any) -> str:
     try:
         return "\n".join(fn(*args))
     except GateError as err:
@@ -78,7 +76,7 @@ def create_server(project_dir: Path) -> MCPServer:
         starts.
         """
 
-        return _gated(
+        return _call(
             tickets.plan_epic,
             project_dir,
             title,
@@ -106,7 +104,7 @@ def create_server(project_dir: Path) -> MCPServer:
         implementation starts.
         """
 
-        return _gated(
+        return _call(
             tickets.record_adr,
             project_dir,
             epic_id,
@@ -137,7 +135,7 @@ def create_server(project_dir: Path) -> MCPServer:
         their agreement before creating tasks or starting work.
         """
 
-        return _gated(
+        return _call(
             tickets.create_story,
             project_dir,
             epic_id,
@@ -167,7 +165,7 @@ def create_server(project_dir: Path) -> MCPServer:
         a dedicated story only when the fix spans 3+ tasks.
         """
 
-        return _gated(
+        return _call(
             tickets.create_task, project_dir, story_id, title, what_to_do, testable_outcome
         )
 
@@ -185,7 +183,7 @@ def create_server(project_dir: Path) -> MCPServer:
         your findings.
         """
 
-        return _gated(tickets.create_spike, project_dir, story_id, title, question, timebox)
+        return _call(tickets.create_spike, project_dir, story_id, title, question, timebox)
 
     @server.tool(name="start_task")
     def start_task(task_id: str) -> str:
@@ -195,7 +193,7 @@ def create_server(project_dir: Path) -> MCPServer:
         is unusual. After finishing, call complete_task.
         """
 
-        return _gated(tickets.start_task, project_dir, task_id)
+        return _call(tickets.start_task, project_dir, task_id)
 
     @server.tool(name="complete_task")
     def complete_task(task_id: str, notes: str) -> str:
@@ -205,7 +203,7 @@ def create_server(project_dir: Path) -> MCPServer:
         verify_task with evidence to finalise.
         """
 
-        return _gated(tickets.complete_task, project_dir, task_id, notes)
+        return _call(tickets.complete_task, project_dir, task_id, notes)
 
     @server.tool(name="verify_task")
     def verify_task(task_id: str, evidence: str) -> str:
@@ -216,7 +214,7 @@ def create_server(project_dir: Path) -> MCPServer:
         from any status. Sets the task to verified.
         """
 
-        return _gated(tickets.verify_task, project_dir, task_id, evidence)
+        return _call(tickets.verify_task, project_dir, task_id, evidence)
 
     @server.tool(name="complete_spike")
     def complete_spike(spike_id: str, findings: str) -> str:
@@ -226,7 +224,7 @@ def create_server(project_dir: Path) -> MCPServer:
         from any status.
         """
 
-        return _gated(tickets.complete_spike, project_dir, spike_id, findings)
+        return _call(tickets.complete_spike, project_dir, spike_id, findings)
 
     @server.tool(name="get_next_action")
     def get_next_action() -> str:
@@ -237,7 +235,7 @@ def create_server(project_dir: Path) -> MCPServer:
         project back up.
         """
 
-        return _gated(query.get_next_action, project_dir)
+        return _call(query.get_next_action, project_dir)
 
     @server.tool(name="get_ticket")
     def get_ticket(ticket_id: str) -> str:
@@ -247,7 +245,7 @@ def create_server(project_dir: Path) -> MCPServer:
         so this is the only way to see it.
         """
 
-        return _gated(query.get_ticket, project_dir, ticket_id)
+        return _call(query.get_ticket, project_dir, ticket_id)
 
     @server.tool(name="list_tickets")
     def list_tickets(ticket_type: str | None = None, status: str | None = None) -> str:
@@ -257,7 +255,7 @@ def create_server(project_dir: Path) -> MCPServer:
         before calling another tool.
         """
 
-        return _gated(query.list_tickets, project_dir, ticket_type, status)
+        return _call(query.list_tickets, project_dir, ticket_type, status)
 
     @server.tool(name="update_ticket")
     def update_ticket(
@@ -277,7 +275,7 @@ def create_server(project_dir: Path) -> MCPServer:
         body_sections replaces whole markdown sections by heading.
         """
 
-        return _gated(
+        return _call(
             query.update_ticket,
             project_dir,
             ticket_id,
@@ -297,7 +295,7 @@ def create_server(project_dir: Path) -> MCPServer:
         to see its details. On-demand — call when you want a snapshot.
         """
 
-        return _gated(
+        return _call(
             export_mod.export_graph,
             project_dir,
             Path(output_path) if output_path else None,

@@ -234,9 +234,8 @@ def _unfinished_blockers(
     )
 
 
-def _oldest[T: TicketBase](tickets: Sequence[T]) -> T:
-    # Generic so the caller keeps the narrow type: list is invariant, so a
-    # plain list[Ticket] parameter would reject list[Epic].
+def _oldest(tickets: Sequence[TicketBase]) -> TicketBase:
+    # Lowest ID = created first, so the ladder is deterministic.
     return min(tickets, key=lambda t: sort_key(t.id))
 
 

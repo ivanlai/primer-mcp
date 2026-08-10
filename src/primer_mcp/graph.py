@@ -202,15 +202,3 @@ def recompute_parents(project_dir: Path, ticket_id: str) -> list[str]:
         changed.append(f"{parent.id} is now {new_status} ({parent.type} status is derived)")
 
     return changed
-
-
-__all__ = [
-    "children_of",
-    "dependency_graph",
-    "derive_status",
-    "find_cycle",
-    "find_path",
-    "load_tickets",
-    "recompute_parents",
-    "sort_key",
-]

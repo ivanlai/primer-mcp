@@ -144,8 +144,23 @@ body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans
 #sidebar .edge-list {{ font-size: 13px; }}
 #sidebar .edge-list span {{ cursor: pointer; color: #4A90D9; }}
 #sidebar .edge-list span:hover {{ text-decoration: underline; }}
-#legend {{ position: absolute; top: 16px; left: 16px; background: rgba(22,33,62,0.92);
-           padding: 16px 20px; border-radius: 8px; font-size: 14px; z-index: 10; }}
+#search {{ position: absolute; top: 16px; left: 16px; z-index: 11; }}
+#search input {{ background: rgba(22,33,62,0.92); border: 1px solid #0f3460; color: #e0e0e0;
+                 padding: 8px 12px; border-radius: 6px; font-size: 14px; width: 200px;
+                 outline: none; }}
+#search input::placeholder {{ color: #666; }}
+#search input:focus {{ border-color: #4A90D9; }}
+#search .dropdown {{ background: rgba(22,33,62,0.96); border: 1px solid #0f3460;
+                     border-top: none; border-radius: 0 0 6px 6px; width: 200px;
+                     max-height: 240px; overflow-y: auto; display: none; }}
+#search .dropdown.open {{ display: block; }}
+#search .dropdown .item {{ padding: 6px 12px; cursor: pointer; font-size: 13px;
+                           white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
+#search .dropdown .item:hover, #search .dropdown .item.active {{ background: #0f3460; }}
+#search .dropdown .item .id {{ color: #4A90D9; margin-right: 6px; }}
+#legend {{ position: absolute; top: 60px; left: 16px; background: rgba(22,33,62,0.92);
+           padding: 16px 20px; border-radius: 8px; font-size: 14px; z-index: 10;
+           width: 200px; box-sizing: border-box; }}
 #legend .row {{ display: flex; align-items: center; margin-bottom: 4px;
                cursor: pointer; user-select: none; }}
 #legend .row:hover {{ opacity: 0.8; }}
@@ -159,6 +174,10 @@ body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans
 </head>
 <body>
 <div id="graph"></div>
+<div id="search">
+  <input type="text" placeholder="Search ticket ID..." oninput="onSearch(this.value)" onkeydown="onSearchKey(event)">
+  <div class="dropdown" id="searchDropdown"></div>
+</div>
 <div id="sidebar">
   <span class="close" onclick="closeSidebar()">&times;</span>
   <div id="detail"></div>
@@ -255,6 +274,45 @@ function toggleFilter(el) {{
   if (store[val]) {{ delete store[val]; el.classList.remove("off"); }}
   else {{ store[val] = true; el.classList.add("off"); }}
   applyFilters();
+}}
+
+var searchIdx = -1;
+function onSearch(q) {{
+  var dd = document.getElementById("searchDropdown");
+  q = q.trim().toUpperCase();
+  searchIdx = -1;
+  if (!q) {{ dd.classList.remove("open"); dd.innerHTML = ""; network.unselectAll(); return; }}
+  var matches = nodeData.filter(function(n) {{
+    var d = details[n.id];
+    return n.id.toUpperCase().indexOf(q) !== -1 || d.title.toUpperCase().indexOf(q) !== -1;
+  }});
+  if (!matches.length) {{ dd.classList.remove("open"); dd.innerHTML = ""; network.unselectAll(); return; }}
+  dd.innerHTML = matches.map(function(n, i) {{
+    var d = details[n.id];
+    return '<div class="item" data-id="'+n.id+'" onclick="pickSearch(\\''+n.id+'\\')"><span class="id">'+esc(n.id)+'</span>'+esc(d.title)+'</div>';
+  }}).join("");
+  var ids = matches.map(function(n) {{ return n.id; }});
+  network.selectNodes(ids);
+  if (matches.length === 1) {{ pickSearch(ids[0]); return; }}
+  dd.classList.add("open");
+}}
+function onSearchKey(e) {{
+  var dd = document.getElementById("searchDropdown");
+  var items = dd.querySelectorAll(".item");
+  if (!items.length) return;
+  if (e.key === "ArrowDown") {{ e.preventDefault(); searchIdx = Math.min(searchIdx + 1, items.length - 1); }}
+  else if (e.key === "ArrowUp") {{ e.preventDefault(); searchIdx = Math.max(searchIdx - 1, 0); }}
+  else if (e.key === "Enter" && searchIdx >= 0) {{ e.preventDefault(); pickSearch(items[searchIdx].getAttribute("data-id")); return; }}
+  else return;
+  items.forEach(function(el, i) {{ el.classList.toggle("active", i === searchIdx); }});
+  items[searchIdx].scrollIntoView({{block: "nearest"}});
+}}
+function pickSearch(id) {{
+  var dd = document.getElementById("searchDropdown");
+  var input = document.querySelector("#search input");
+  dd.classList.remove("open");
+  input.value = id;
+  go(id);
 }}
 
 function applyFilters() {{

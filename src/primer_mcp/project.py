@@ -70,6 +70,10 @@ tools or not at all.
 - After creating tickets, completing tasks, or verifying tasks, offer to
   regenerate the project graph with `export_graph` so the user can see
   the updated picture.
+- When the user reports a bug or small fix, check for a standing bug-fix
+  story under the epic before creating a new story. Small fixes (1–2
+  tasks) go as tasks under that story; larger efforts (3+ tasks) get
+  their own story. If no bug-fix story exists yet, suggest creating one.
 """
 
 

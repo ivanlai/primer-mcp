@@ -150,6 +150,10 @@ def create_server(project_dir: Path) -> MCPServer:
         Create a Task under a story — a concrete unit of implementation work
         with a testable outcome. The parent story must already exist. After
         creation, call start_task to begin work.
+
+        For small bug fixes (1–2 tasks), prefer adding a task under the
+        standing bug-fix story rather than creating a new story. Suggest
+        a dedicated story only when the fix spans 3+ tasks.
         """
 
         return _gated(
@@ -309,6 +313,16 @@ def create_server(project_dir: Path) -> MCPServer:
                 f" get_ticket(ticket_id=\"{epic_id}\").\n"
             )
         parts.append(
+            "## Placement check\n\n"
+            "Before creating a new story, gauge the scope of the work:\n"
+            "- **Small fix (1–2 tasks):** look for an existing bug-fix"
+            " story under the epic (title contains 'bug fix' or similar)."
+            " If one exists, add a task there instead of creating a new"
+            " story. Suggest this to the user.\n"
+            "- **Larger effort (3+ tasks):** create a dedicated story.\n\n"
+            "If unsure, ask the user whether it fits as a task under the"
+            " bug-fix story or deserves its own.\n\n"
+            "## Story planning\n\n"
             "1. **Title** — one line summarising the deliverable.\n"
             "2. **What** — what will be built or changed, at overview level.\n"
             "3. **Acceptance criteria** — testable conditions that prove the"

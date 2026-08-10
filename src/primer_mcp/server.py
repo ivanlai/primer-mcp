@@ -127,8 +127,11 @@ def create_server(project_dir: Path) -> MCPServer:
     ) -> str:
         """
         Create a Story under an epic — a deliverable with acceptance criteria.
-        The epic must exist. If no ADR has been recorded yet, the response
-        will suggest capturing decisions first, but the story is still created.
+        The epic must exist — if one hasn't been created yet, call plan_epic
+        first. The user will have described their goals; use that to create
+        the epic, asking for clarification if needed. If no ADR has been
+        recorded, the response will suggest capturing decisions first, but
+        the story is still created.
 
         After creating stories, present the plan to the user and wait for
         their agreement before creating tasks or starting work.

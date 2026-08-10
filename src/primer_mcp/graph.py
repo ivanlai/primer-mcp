@@ -1,4 +1,5 @@
-"""The dependency graph and derived status over the ticket store.
+"""
+The dependency graph and derived status over the ticket store.
 
 Imports only errors, models, project and storage — never tickets or query —
 so tickets.py can call the cascade and query.py can import both without a
@@ -29,7 +30,8 @@ TERMINAL_STATUS = {"task": "verified", "spike": "done", "story": "done", "adr": 
 
 
 def sort_key(ticket_id: str) -> tuple[str, int]:
-    """Order IDs by prefix then numeric value.
+    """
+    Order IDs by prefix then numeric value.
 
     Plain string sort puts TK-010 before TK-002 without zero padding, and
     TK-1000 before TK-999 even with it — next_id explicitly supports IDs
@@ -40,7 +42,8 @@ def sort_key(ticket_id: str) -> tuple[str, int]:
 
 
 def find_path(project_dir: Path, ticket_id: str) -> Path:
-    """Resolve a bare ticket ID to its file: TK-001 -> primer/tasks/TK-001.md.
+    """
+    Resolve a bare ticket ID to its file: TK-001 -> primer/tasks/TK-001.md.
 
     Callers that take an ID without a type (get_ticket, update_ticket) need
     this; the prefix is what identifies the subdirectory.
@@ -61,7 +64,8 @@ def find_path(project_dir: Path, ticket_id: str) -> Path:
 
 
 def load_tickets(project_dir: Path) -> dict[str, Ticket]:
-    """Read every ticket in the store, keyed by ID.
+    """
+    Read every ticket in the store, keyed by ID.
 
     Missing subdirectories are tolerated rather than treated as corruption:
     git does not track empty directories, so a fresh clone of a store with no
@@ -85,8 +89,10 @@ def load_tickets(project_dir: Path) -> dict[str, Ticket]:
 
 
 def dependency_graph(tickets: dict[str, Ticket]) -> nx.DiGraph[str]:
-    """Build the dependency graph: an edge blocker -> blocked for each
-    `blocked_by` entry. Nodes are ticket IDs."""
+    """
+    Build the dependency graph: an edge blocker -> blocked for each
+    `blocked_by` entry. Nodes are ticket IDs.
+    """
     graph: nx.DiGraph[str] = nx.DiGraph()
     graph.add_nodes_from(tickets)
     for ticket in tickets.values():
@@ -96,7 +102,8 @@ def dependency_graph(tickets: dict[str, Ticket]) -> nx.DiGraph[str]:
 
 
 def find_cycle(graph: nx.DiGraph[str]) -> list[str] | None:
-    """Return one dependency cycle, or None. A ticket blocking itself is a
+    """
+    Return one dependency cycle, or None. A ticket blocking itself is a
     cycle of length one and is caught here too.
 
     Picks the shortest cycle, ties broken by ID, so the message is stable
@@ -109,10 +116,12 @@ def find_cycle(graph: nx.DiGraph[str]) -> list[str] | None:
 
 
 def children_of(tickets: dict[str, Ticket], parent_id: str) -> list[Ticket]:
-    """Tickets one level below `parent_id` in the hierarchy: an epic's stories,
+    """
+    Tickets one level below `parent_id` in the hierarchy: an epic's stories,
     or a story's tasks and spikes. ADRs are excluded — they are born `done`
     and record a decision rather than tracking work, so they never bear on
-    whether their epic is finished."""
+    whether their epic is finished.
+    """
     result = [
         ticket
         for ticket in tickets.values()
@@ -123,7 +132,8 @@ def children_of(tickets: dict[str, Ticket], parent_id: str) -> list[Ticket]:
 
 
 def derive_status(tickets: dict[str, Ticket], parent_id: str) -> str | None:
-    """Return "done" when every child has reached its terminal status, else None.
+    """
+    Return "done" when every child has reached its terminal status, else None.
 
     Requires at least one child: "all children are finished" is vacuously
     true of a childless story, which would make a freshly created story
@@ -154,7 +164,8 @@ def _parent_chain(tickets: dict[str, Ticket], ticket_id: str) -> list[str]:
 
 
 def recompute_parents(project_dir: Path, ticket_id: str) -> list[str]:
-    """Push derived done-ness up the hierarchy after a write, and pull it back
+    """
+    Push derived done-ness up the hierarchy after a write, and pull it back
     down when a new child undoes it. Returns a line per file changed.
 
     Rules, in order:

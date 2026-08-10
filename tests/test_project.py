@@ -1,4 +1,6 @@
-"""init_project tests: layout, config, CLAUDE.md handling, idempotency."""
+"""
+init_project tests: layout, config, CLAUDE.md handling, idempotency.
+"""
 
 from pathlib import Path
 
@@ -14,7 +16,9 @@ from primer_mcp.project import (
 
 
 def tree_snapshot(root: Path) -> dict[str, bytes]:
-    """Relative path -> content for every file under root."""
+    """
+    Relative path -> content for every file under root.
+    """
     return {
         str(p.relative_to(root)): p.read_bytes() for p in sorted(root.rglob("*")) if p.is_file()
     }

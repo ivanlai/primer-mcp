@@ -1,4 +1,5 @@
-"""Pydantic models for all primer-mcp ticket types.
+"""
+Pydantic models for all primer-mcp ticket types.
 
 The schema and per-type status sets are defined in docs/architecture.md
 (see "Ticket Schema" and "Ticket Lifecycle"). Frontmatter carries the
@@ -44,7 +45,8 @@ TICKET_ID_PATTERN = re.compile(rf"^({'|'.join(ID_PREFIX.values())})-\d{{3,}}$")
 
 
 class TicketBase(BaseModel):
-    """Fields common to every ticket type, including graph edges.
+    """
+    Fields common to every ticket type, including graph edges.
 
     `blocked_by` is the only stored dependency edge: "A blocks B" and
     "B is blocked by A" are one directed edge stated from two ends, so

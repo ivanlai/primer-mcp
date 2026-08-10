@@ -1,4 +1,6 @@
-"""Read and update tools: listing, retrieval, and the gates on update_ticket."""
+"""
+Read and update tools: listing, retrieval, and the gates on update_ticket.
+"""
 
 from pathlib import Path
 
@@ -28,7 +30,9 @@ def _id(lines: list[str]) -> str:
 
 @pytest.fixture
 def project(tmp_path: Path) -> Path:
-    """An epic with one ADR, one story, and two tasks under it."""
+    """
+    An epic with one ADR, one story, and two tasks under it.
+    """
     init_project(tmp_path, "demo")
     epic_id = _id(plan_epic(tmp_path, "Epic", why="w", goals=["g"]))
     record_adr(
@@ -130,7 +134,9 @@ class TestUpdateStatus:
 
 
 class TestTerminalGuard:
-    """Either side of the line that keeps the derived-status cascade sound."""
+    """
+    Either side of the line that keeps the derived-status cascade sound.
+    """
 
     def finish(self, project: Path, task_id: str) -> None:
         start_task(project, task_id)
@@ -228,8 +234,10 @@ class TestUpdateBodyAndRefs:
 
 
 def force_edge(project: Path, ticket_id: str, blocked_by: list[str]) -> None:
-    """Write an edge straight to disk, bypassing validation — the only way to
-    build a cycle, since update_ticket exists to refuse them."""
+    """
+    Write an edge straight to disk, bypassing validation — the only way to
+    build a cycle, since update_ticket exists to refuse them.
+    """
     path = find_path(project, ticket_id)
     ticket, body = loads_ticket(path.read_text())
     path.write_text(dumps_ticket(ticket.model_copy(update={"blocked_by": blocked_by}), body))
@@ -240,8 +248,10 @@ def next_action(project: Path) -> str:
 
 
 class TestLadderRungs:
-    """Each rung reached in isolation. The ladder returns on the first match,
-    so every test here builds a store where exactly one rung applies."""
+    """
+    Each rung reached in isolation. The ladder returns on the first match,
+    so every test here builds a store where exactly one rung applies.
+    """
 
     def test_no_store_points_at_init(self, tmp_path: Path) -> None:
         assert "init_project" in next_action(tmp_path)
@@ -315,7 +325,9 @@ class TestLadderRungs:
 
 
 class TestLadderPrecedence:
-    """The orderings that were real decisions rather than falling out of the code."""
+    """
+    The orderings that were real decisions rather than falling out of the code.
+    """
 
     def test_completed_task_outranks_planning_another_story(self, project: Path) -> None:
         # A half-open two-phase gate beats creating anything new.

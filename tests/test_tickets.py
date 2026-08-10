@@ -1,4 +1,6 @@
-"""Ticket creation tests: file output, templates, ID sequencing, and workflow gates."""
+"""
+Ticket creation tests: file output, templates, ID sequencing, and workflow gates.
+"""
 
 from pathlib import Path
 
@@ -621,9 +623,11 @@ def status_of(project: Path, ticket_id: str) -> str:
 
 
 class TestDerivedStatusCascade:
-    """Completing the last child settles its parents; adding a new one reopens
+    """
+    Completing the last child settles its parents; adding a new one reopens
     them. Both directions run from the write tools, so disk stays honest
-    without any read tool having to derive anything."""
+    without any read tool having to derive anything.
+    """
 
     def scaffold(self, project: Path) -> tuple[str, str, str]:
         epic_id = make_epic(project)

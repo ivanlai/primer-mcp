@@ -1,4 +1,5 @@
-"""Reading the store and editing tickets after creation.
+"""
+Reading the store and editing tickets after creation.
 
 The three tools an agent needs to work without filesystem access: read one
 ticket, list what exists, and amend a ticket the creation tools already wrote.
@@ -44,7 +45,9 @@ def _ordered(tickets: list[Ticket]) -> list[Ticket]:
 
 
 def get_ticket(project_dir: Path, ticket_id: str) -> list[str]:
-    """Return one ticket verbatim, plus the edges it does not store."""
+    """
+    Return one ticket verbatim, plus the edges it does not store.
+    """
     path = find_path(project_dir, ticket_id)
     lines = [f"{path}", "", path.read_text(encoding="utf-8").rstrip()]
 
@@ -62,7 +65,9 @@ def list_tickets(
     ticket_type: str | None = None,
     status: str | None = None,
 ) -> list[str]:
-    """One line per ticket, filtered by type and status."""
+    """
+    One line per ticket, filtered by type and status.
+    """
     if ticket_type is not None and ticket_type not in SUBDIR_FOR_TYPE:
         raise GateError(
             f"Unknown ticket type {ticket_type!r}. Expected one of: {', '.join(SUBDIR_FOR_TYPE)}."
@@ -157,7 +162,8 @@ def update_ticket(
     body_sections: dict[str, str] | None = None,
     external_ref: dict[str, str] | None = None,
 ) -> list[str]:
-    """Amend a ticket after creation. Every argument left out is left alone.
+    """
+    Amend a ticket after creation. Every argument left out is left alone.
 
     Needs no cascade of its own: the terminal-status guard means it can never
     change whether a parent's children are all finished.
@@ -240,7 +246,8 @@ def _answer(situation: str, next_call: str) -> list[str]:
 
 
 def get_next_action(project_dir: Path) -> list[str]:
-    """Answer "what should I do next?" with exactly one instruction.
+    """
+    Answer "what should I do next?" with exactly one instruction.
 
     Checks run in a fixed order and the first match returns, so the answer is
     deterministic rather than a list of options:

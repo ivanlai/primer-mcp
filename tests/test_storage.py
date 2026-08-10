@@ -1,4 +1,6 @@
-"""Frontmatter serialisation round-trip tests."""
+"""
+Frontmatter serialisation round-trip tests.
+"""
 
 from datetime import date
 

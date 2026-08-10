@@ -1,4 +1,6 @@
-"""Dependency graph, cycle detection, derived done-ness and the parent cascade."""
+"""
+Dependency graph, cycle detection, derived done-ness and the parent cascade.
+"""
 
 from datetime import date
 from pathlib import Path
@@ -24,7 +26,9 @@ TODAY = date(2026, 1, 1)
 
 
 def store(project: Path) -> Path:
-    """The ticket store inside a project dir — tests reach in to assert on files."""
+    """
+    The ticket store inside a project dir — tests reach in to assert on files.
+    """
     return project / "primer"
 
 
@@ -82,8 +86,10 @@ def adr(id: str = "ADR-001", epic_id: str = "EP-001") -> Adr:
 
 @pytest.fixture
 def project(tmp_path: Path) -> Path:
-    """The *project* directory. Every path-taking entry point in the package
-    takes this and resolves primer/ itself."""
+    """
+    The *project* directory. Every path-taking entry point in the package
+    takes this and resolves primer/ itself.
+    """
     init_project(tmp_path, "demo")
     return tmp_path
 

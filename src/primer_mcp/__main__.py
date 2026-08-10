@@ -1,4 +1,6 @@
-"""Command-line entry point for the primer-mcp server."""
+"""
+Command-line entry point for the primer-mcp server.
+"""
 
 import argparse
 from pathlib import Path

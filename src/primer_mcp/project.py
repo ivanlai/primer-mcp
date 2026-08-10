@@ -1,4 +1,5 @@
-"""Project initialisation: the primer/ data store and CLAUDE.md setup.
+"""
+Project initialisation: the primer/ data store and CLAUDE.md setup.
 
 Everything here is idempotent — running init_project twice produces
 byte-identical state to running it once, and user-owned files
@@ -29,7 +30,8 @@ SUBDIRS = tuple(SUBDIR_FOR_TYPE.values())
 
 
 def require_store(project_dir: Path) -> Path:
-    """Resolve a project directory to its ticket store, or raise.
+    """
+    Resolve a project directory to its ticket store, or raise.
 
     Every entry point in the package takes the *project* directory and
     converts here, so there is one convention rather than two. Passing the
@@ -73,7 +75,8 @@ def init_project(
     project_name: str,
     jira_project_key: str | None = None,
 ) -> list[str]:
-    """Initialise a project directory for primer-mcp.
+    """
+    Initialise a project directory for primer-mcp.
 
     Returns human-readable lines describing what was done — surfaced
     directly as the MCP tool response, so each line tells the agent

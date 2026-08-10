@@ -1,4 +1,5 @@
-"""Ticket creation: business logic for the planning tools.
+"""
+Ticket creation: business logic for the planning tools.
 
 No MCP imports here — this layer is tested directly (tmp_path) and the
 server registers thin wrappers around it. Body templates follow
@@ -21,7 +22,8 @@ from primer_mcp.storage import dumps_ticket, loads_ticket
 
 
 def next_id(primer: Path, ticket_type: str) -> str:
-    """Allocate the next sequential ID for a ticket type by scanning existing
+    """
+    Allocate the next sequential ID for a ticket type by scanning existing
     files, e.g. tasks/ holding TK-001.md and TK-007.md -> "TK-008".
 
     Max+1 (not count+1) so deleted tickets never cause ID reuse; zero-padded
@@ -39,9 +41,11 @@ def next_id(primer: Path, ticket_type: str) -> str:
 
 
 def _bullets(items: list[str], empty: str = "(none)") -> str:
-    """Render items as a markdown bullet list for ticket bodies,
+    """
+    Render items as a markdown bullet list for ticket bodies,
     e.g. ["a", "b"] -> "- a\\n- b". An empty list becomes a single
-    placeholder bullet so template sections are never blank."""
+    placeholder bullet so template sections are never blank.
+    """
     return "\n".join(f"- {item}" for item in items) if items else f"- {empty}"
 
 
@@ -84,7 +88,9 @@ def plan_epic(
     non_goals: list[str] | None = None,
     success_criteria: list[str] | None = None,
 ) -> list[str]:
-    """Create an Epic ticket. Returns steering lines for the tool response."""
+    """
+    Create an Epic ticket. Returns steering lines for the tool response.
+    """
     primer = require_store(project_dir)
     epic_id = next_id(primer, "epic")
     today = datetime.now(tz=UTC).date()
@@ -127,7 +133,9 @@ def record_adr(
     alternatives: list[str],
     consequences: str,
 ) -> list[str]:
-    """Record an ADR under an epic. Gate: the epic must exist."""
+    """
+    Record an ADR under an epic. Gate: the epic must exist.
+    """
     primer = require_store(project_dir)
     epic_path = primer / "epics" / f"{epic_id}.md"
     if not epic_path.is_file():
@@ -178,7 +186,9 @@ def create_story(
     acceptance_criteria: list[str] | None = None,
     definition_of_done: list[str] | None = None,
 ) -> list[str]:
-    """Create a Story under an epic. Gate: epic must exist and have at least one ADR."""
+    """
+    Create a Story under an epic. Gate: epic must exist and have at least one ADR.
+    """
     primer = require_store(project_dir)
 
     epic_path = primer / "epics" / f"{epic_id}.md"
@@ -241,7 +251,9 @@ def create_task(
     what_to_do: str,
     testable_outcome: str,
 ) -> list[str]:
-    """Create a Task under a story. Gate: story must exist."""
+    """
+    Create a Task under a story. Gate: story must exist.
+    """
     primer = require_store(project_dir)
     _require_ticket(primer, story_id, "story", "create ticket")
 
@@ -279,7 +291,9 @@ def create_spike(
     question: str,
     timebox: str,
 ) -> list[str]:
-    """Create a Spike under a story. Gate: story must exist."""
+    """
+    Create a Spike under a story. Gate: story must exist.
+    """
     primer = require_store(project_dir)
     _require_ticket(primer, story_id, "story", "create ticket")
 
@@ -316,7 +330,9 @@ def start_task(
     project_dir: Path,
     task_id: str,
 ) -> list[str]:
-    """Transition a task to in-progress. Gate: task must exist and be in todo or blocked."""
+    """
+    Transition a task to in-progress. Gate: task must exist and be in todo or blocked.
+    """
     primer = require_store(project_dir)
     task_path = _require_ticket(primer, task_id, "task", "start task")
 
@@ -347,7 +363,9 @@ def complete_task(
     task_id: str,
     notes: str,
 ) -> list[str]:
-    """Complete a task. Gate: task must be in-progress."""
+    """
+    Complete a task. Gate: task must be in-progress.
+    """
     primer = require_store(project_dir)
     task_path = _require_ticket(primer, task_id, "task", "complete task")
 
@@ -391,7 +409,9 @@ def verify_task(
     task_id: str,
     evidence: str,
 ) -> list[str]:
-    """Verify a completed task. Gate: task must be completed (two-phase gate)."""
+    """
+    Verify a completed task. Gate: task must be completed (two-phase gate).
+    """
     primer = require_store(project_dir)
     task_path = _require_ticket(primer, task_id, "task", "verify task")
 
@@ -431,7 +451,9 @@ def complete_spike(
     spike_id: str,
     findings: str,
 ) -> list[str]:
-    """Complete a spike with findings. Gate: spike must be todo or in-progress."""
+    """
+    Complete a spike with findings. Gate: spike must be todo or in-progress.
+    """
     primer = require_store(project_dir)
     spike_path = _require_ticket(primer, spike_id, "spike", "complete spike")
 

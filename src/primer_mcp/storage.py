@@ -1,4 +1,5 @@
-"""Serialise tickets to and from markdown with YAML frontmatter.
+"""
+Serialise tickets to and from markdown with YAML frontmatter.
 
 Directory layout and file I/O belong to init_project; this module
 only defines the text format so it round-trips cleanly:
@@ -17,15 +18,18 @@ _TICKET_ADAPTER: TypeAdapter[Ticket] = TypeAdapter(Ticket)
 
 
 class _NoAliasDumper(yaml.SafeDumper):
-    """Never emit YAML anchors/aliases (&id001/*id001) for repeated values —
-    frontmatter must stay human-readable and hand-editable."""
+    """
+    Never emit YAML anchors/aliases (&id001/*id001) for repeated values —
+    frontmatter must stay human-readable and hand-editable.
+    """
 
     def ignore_aliases(self, data: object) -> bool:
         return True
 
 
 def dumps_ticket(ticket: Ticket, body: str) -> str:
-    """Render a ticket as markdown with YAML frontmatter.
+    """
+    Render a ticket as markdown with YAML frontmatter.
 
     Keys keep field-definition order (sort_keys=False) so files diff
     cleanly in git; dates are written as plain ISO dates.
@@ -38,7 +42,8 @@ def dumps_ticket(ticket: Ticket, body: str) -> str:
 
 
 def loads_ticket(text: str) -> tuple[Ticket, str]:
-    """Parse markdown with YAML frontmatter into a validated ticket and body.
+    """
+    Parse markdown with YAML frontmatter into a validated ticket and body.
 
     The `type` frontmatter field discriminates which model applies.
     Raises pydantic.ValidationError on schema violations.

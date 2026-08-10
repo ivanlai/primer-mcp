@@ -1,4 +1,6 @@
-"""The MCP layer: every tool registered, and gate errors surfaced as responses."""
+"""
+The MCP layer: every tool registered, and gate errors surfaced as responses.
+"""
 
 from pathlib import Path
 

@@ -1,4 +1,6 @@
-"""Schema validation tests: valid and invalid inputs for each ticket model."""
+"""
+Schema validation tests: valid and invalid inputs for each ticket model.
+"""
 
 from datetime import date
 from typing import Any

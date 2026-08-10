@@ -203,6 +203,9 @@ cython_debug/
 # Temporary file for partial code execution
 tempCodeRunnerFile.py
 
+# primer-mcp generated output
+primer/graph.html
+
 # Ruff stuff:
 .ruff_cache/
 

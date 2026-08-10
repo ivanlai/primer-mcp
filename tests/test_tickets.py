@@ -204,13 +204,11 @@ class TestCreateStory:
         assert "EP-999" in msg
         assert "EP-001" in msg
 
-    def test_gate_epic_has_no_adrs(self, project: Path) -> None:
+    def test_no_adr_creates_story_with_nudge(self, project: Path) -> None:
         epic_id = make_epic(project)
-        with pytest.raises(GateError) as exc:
-            create_story(project, epic_id, "s", what="w")
-        msg = str(exc.value)
-        assert "no ADRs" in msg
-        assert "record_adr" in msg
+        result = create_story(project, epic_id, "s", what="w")
+        assert any("record_adr" in line for line in result)
+        assert any("ST-" in line for line in result)
 
 
 class TestCreateTask:

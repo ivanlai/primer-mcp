@@ -101,8 +101,9 @@ def create_server(project_dir: Path) -> MCPServer:
         """
         Record an Architecture Decision Record under an epic: the context
         forcing a choice, the decision, alternatives rejected (with reasons),
-        and consequences accepted. At least one ADR is required per epic before
-        create_story will work — decisions come before implementation.
+        and consequences accepted. Recording decisions before creating stories
+        is recommended — it captures reasoning that gets lost once
+        implementation starts.
         """
 
         return _gated(
@@ -126,9 +127,8 @@ def create_server(project_dir: Path) -> MCPServer:
     ) -> str:
         """
         Create a Story under an epic — a deliverable with acceptance criteria.
-        Requires the epic to have at least one recorded ADR (architectural
-        decisions come before implementation). If gated, the error tells you
-        what to call instead.
+        The epic must exist. If no ADR has been recorded yet, the response
+        will suggest capturing decisions first, but the story is still created.
         """
 
         return _gated(

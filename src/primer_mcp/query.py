@@ -309,9 +309,10 @@ def get_next_action(project_dir: Path) -> list[str]:
 
     if not any(isinstance(t, Adr) and t.epic_id == epic.id for t in tickets.values()):
         return _answer(
-            f"{epic.id} ({epic.title}) has no recorded decisions.",
-            f'record_adr(epic_id="{epic.id}", ...) — stories are gated on at least '
-            "one, because decisions come before implementation.",
+            f"{epic.id} ({epic.title}) has no recorded decisions yet.",
+            f'Consider record_adr(epic_id="{epic.id}", ...) to capture the reasoning '
+            "before it gets lost. You can also create stories directly if the "
+            "decisions are straightforward.",
         )
 
     # Task-state gates first: a half-open two-phase gate is the dangling state

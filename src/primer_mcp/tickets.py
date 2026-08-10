@@ -171,10 +171,7 @@ def record_adr(
     path.write_text(dumps_ticket(adr, body), encoding="utf-8")
     return [
         f"Recorded {adr_id}: {title} (decision for {epic_id})",
-        (
-            f"{epic_id} now satisfies the ADR gate — create_story is unlocked "
-            "once it lands, or record further ADRs."
-        ),
+        f"Decision captured. Record further ADRs or create stories under {epic_id}.",
     ]
 
 
@@ -187,7 +184,8 @@ def create_story(
     definition_of_done: list[str] | None = None,
 ) -> list[str]:
     """
-    Create a Story under an epic. Gate: epic must exist and have at least one ADR.
+    Create a Story under an epic. The epic must exist. Suggests recording an
+    ADR first if the epic has none, but does not block.
     """
     primer = require_store(project_dir)
 
@@ -208,11 +206,12 @@ def create_story(
         frontmatter.loads(p.read_text(encoding="utf-8")).metadata.get("epic_id") == epic_id
         for p in (primer / "adrs").glob("ADR-*.md")
     )
+    nudge: str | None = None
     if not has_adr:
-        raise GateError(
-            f"Cannot create story: epic {epic_id} has no ADRs. "
-            f"Record at least one architectural decision first: "
-            f'record_adr(epic_id="{epic_id}", ...)'
+        nudge = (
+            f"Tip: {epic_id} has no recorded decisions yet. Consider calling "
+            f'record_adr(epic_id="{epic_id}", ...) to capture the reasoning '
+            f"before it gets lost — even a short one helps future readers."
         )
 
     story_id = next_id(primer, "story")
@@ -237,11 +236,14 @@ def create_story(
     )
     path = primer / "stories" / f"{story_id}.md"
     path.write_text(dumps_ticket(story, body), encoding="utf-8")
-    return [
+    lines = [
         f"Created {story_id}: {title} ({path})",
         f'Next: create tasks with create_task(story_id="{story_id}", ...).',
         *recompute_parents(project_dir, story_id),
     ]
+    if nudge:
+        lines.append(nudge)
+    return lines
 
 
 def create_task(

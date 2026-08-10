@@ -86,9 +86,9 @@ def list_tickets(
     return [f"{t.id:<8} {t.type:<6} {t.status:<{width}}  {t.title}" for t in _ordered(tickets)]
 
 
-def _check_status(ticket: Ticket, status: str) -> None:
-    # Two separate rules: the value must be one update_ticket owns, and the
-    # ticket must not already be finished.
+def _check_status(ticket: Ticket, status: str) -> str | None:
+    # Hard errors for invalid values and types that have no lifecycle.
+    # Soft nudges for unusual but allowed transitions.
     if status not in SETTABLE_STATUS:
         remedy = {
             "completed": f'complete_task(task_id="{ticket.id}", notes="...") records '
@@ -112,12 +112,12 @@ def _check_status(ticket: Ticket, status: str) -> None:
             "already made and has no lifecycle. Record a superseding ADR instead."
         )
 
-    if ticket.status == TERMINAL_STATUS[ticket.type]:
-        raise GateError(
-            f"Cannot change the status of {ticket.id}: it is {ticket.status!r}, "
-            f"which is terminal. Reopening would strand its parents, whose status "
-            f"is derived. Create a follow-up ticket instead."
+    if ticket.status == TERMINAL_STATUS.get(ticket.type):
+        return (
+            f"Note: {ticket.id} is {ticket.status!r}, which is normally terminal. "
+            f"Proceeding, but consider whether a follow-up ticket would be clearer."
         )
+    return None
 
 
 def _check_edges(tickets: dict[str, Ticket], ticket: Ticket, blocked_by: list[str]) -> None:
@@ -164,9 +164,7 @@ def update_ticket(
 ) -> list[str]:
     """
     Amend a ticket after creation. Every argument left out is left alone.
-
-    Needs no cascade of its own: the terminal-status guard means it can never
-    change whether a parent's children are all finished.
+    Status changes on terminal tickets are allowed with a nudge.
     """
     if status is None and blocked_by is None and body_sections is None and external_ref is None:
         raise GateError(
@@ -180,9 +178,12 @@ def update_ticket(
 
     changes: dict[str, object] = {}
     reported: list[str] = []
+    nudges: list[str] = []
 
     if status is not None:
-        _check_status(ticket, status)
+        nudge = _check_status(ticket, status)
+        if nudge:
+            nudges.append(nudge)
         changes["status"] = status
         reported.append(f"status: {ticket.status} -> {status}")
 
@@ -201,7 +202,11 @@ def update_ticket(
 
     changes["updated"] = datetime.now(tz=UTC).date()
     path.write_text(dumps_ticket(ticket.model_copy(update=changes), body), encoding="utf-8")
-    return [f"Updated {ticket_id}: {ticket.title}", *(f"  {line}" for line in reported)]
+    return [
+        f"Updated {ticket_id}: {ticket.title}",
+        *(f"  {line}" for line in reported),
+        *nudges,
+    ]
 
 
 def _epic_scope(tickets: dict[str, Ticket], epic_id: str) -> dict[str, Ticket]:

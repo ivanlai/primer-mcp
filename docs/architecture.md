@@ -278,6 +278,7 @@ All state-changing operations and queries, including read access (`get_ticket`, 
 ### Prompts
 - `plan_story` — a reusable conversation template that scaffolds the planning phase before a story is created. Works across all MCP clients, including those without a native plan mode.
 - `export_jira` — scaffolds the export of primer-mcp tickets to Jira via whatever Jira MCP server the client has available (see "Graduating to Jira").
+- `import_jira` — scaffolds importing a Jira epic and its children into primer-mcp via the client's Jira MCP server, creating tickets in gate order and recording Jira keys in `external_ref`.
 
 ### Resources
 Not used in v1. Future: expose ticket files as readable resources for richer client integrations.

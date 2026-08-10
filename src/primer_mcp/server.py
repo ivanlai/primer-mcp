@@ -25,11 +25,10 @@ from primer_mcp import project, query, tickets
 from primer_mcp.errors import GateError
 
 INSTRUCTIONS = """\
-primer-mcp enforces a planning-first workflow. The hierarchy is
-Epic -> ADR -> Story -> Task, gated in that order: an epic needs at least
-one recorded ADR before stories can be created, and tasks need a parent
-story. Start a new project with init_project, then plan_epic, then
-record_adr. Gate violations return instructions for the correct next call.
+primer-mcp guides a planning-first workflow. The recommended hierarchy is
+Epic -> ADR -> Story -> Task: start with why the work matters, record
+decisions, then break it into stories and tasks. The tools suggest this
+flow but do not block you from skipping steps — use your judgement.
 Tickets are plain markdown with YAML frontmatter — read and edit them
 directly where the tools fall short.
 """
@@ -72,10 +71,11 @@ def create_server(project_dir: Path) -> MCPServer:
         success_criteria: list[str] | None = None,
     ) -> str:
         """
-        Create an Epic — the top-level container for a body of work. Do this
-        BEFORE writing any code: state why the work matters, its goals, and how
-        you'll know it's done. Stories cannot be created until the epic also has
-        at least one ADR (record_adr).
+        Create an Epic — the top-level container for a body of work. Start
+        here: state why the work matters, its goals, and how you'll know
+        it's done. Consider recording decisions (record_adr) before creating
+        stories — it captures reasoning that gets lost once implementation
+        starts.
         """
 
         return _gated(
@@ -181,9 +181,9 @@ def create_server(project_dir: Path) -> MCPServer:
     @server.tool(name="start_task")
     def start_task(task_id: str) -> str:
         """
-        Transition a task from todo (or blocked) to in-progress — call this
-        when you begin working on a task. The task must exist and not already
-        be completed or verified. After finishing, call complete_task.
+        Transition a task to in-progress — call this when you begin working
+        on a task. Works from any status; you'll get a note if the transition
+        is unusual. After finishing, call complete_task.
         """
 
         return _gated(tickets.start_task, project_dir, task_id)
@@ -191,10 +191,9 @@ def create_server(project_dir: Path) -> MCPServer:
     @server.tool(name="complete_task")
     def complete_task(task_id: str, notes: str) -> str:
         """
-        Mark a task as completed with notes on what was done. The task must
-        be in-progress (call start_task first if it isn't). This is phase one
-        of the two-phase completion gate — after this, call verify_task with
-        evidence to finalise.
+        Mark a task as completed with notes on what was done. Ideally call
+        start_task first, but this works from any status. After this, call
+        verify_task with evidence to finalise.
         """
 
         return _gated(tickets.complete_task, project_dir, task_id, notes)
@@ -202,11 +201,10 @@ def create_server(project_dir: Path) -> MCPServer:
     @server.tool(name="verify_task")
     def verify_task(task_id: str, evidence: str) -> str:
         """
-        Verify a completed task with evidence that the work holds — point
-        at the commit, not the output (e.g. "218 passed, mypy clean —
-        c4ac39f"). The task must already be completed via complete_task —
-        this is the second phase of the two-phase gate. Sets the task to
-        verified (terminal). Cannot be undone.
+        Verify a task with evidence that the work holds — point at the
+        commit, not the output (e.g. "218 passed, mypy clean — c4ac39f").
+        Ideally call complete_task first to capture notes, but this works
+        from any status. Sets the task to verified.
         """
 
         return _gated(tickets.verify_task, project_dir, task_id, evidence)
@@ -215,9 +213,8 @@ def create_server(project_dir: Path) -> MCPServer:
     def complete_spike(spike_id: str, findings: str) -> str:
         """
         Close a spike by recording its findings — the answer to the
-        question it was investigating and any recommendations. The spike
-        must be in todo or in-progress (not blocked or already done).
-        Sets status to done (terminal).
+        question it was investigating and any recommendations. Works
+        from any status.
         """
 
         return _gated(tickets.complete_spike, project_dir, spike_id, findings)
@@ -225,10 +222,10 @@ def create_server(project_dir: Path) -> MCPServer:
     @server.tool(name="get_next_action")
     def get_next_action() -> str:
         """
-        Ask what to do next. Returns exactly one instruction: the first
-        unmet workflow gate, or the next ready ticket. Call this whenever you
+        Ask what to do next. Returns exactly one suggestion: the most
+        useful next step based on the current state. Call this whenever you
         are unsure where to start, after finishing anything, or when picking a
-        project back up — it reads the current state rather than guessing.
+        project back up.
         """
 
         return _gated(query.get_next_action, project_dir)
@@ -263,10 +260,10 @@ def create_server(project_dir: Path) -> MCPServer:
     ) -> str:
         """
         Amend a ticket after creation; anything left out is left alone.
-        status sets todo, in-progress or blocked — the finished states belong
-        to complete_task, verify_task and complete_spike, which record why.
-        blocked_by replaces the list of tickets this one waits on, and is
-        refused if the referenced tickets do not exist or the edge would
+        status sets todo, in-progress or blocked — for finished states,
+        prefer complete_task, verify_task or complete_spike as they also
+        record notes. blocked_by replaces the dependency list and is
+        refused if a referenced ticket does not exist or the edge would
         create a cycle. To say "A blocks B", set blocked_by on B.
         body_sections replaces whole markdown sections by heading.
         """

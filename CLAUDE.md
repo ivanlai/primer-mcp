@@ -94,16 +94,15 @@ were argued through at length and the reasoning is not in the code.
 This project uses primer-mcp for planning-first development. Tickets are
 markdown files under `primer/` — they are yours to read and edit. Prefer the
 tools for creating and updating them: they allocate IDs, follow the templates
-and enforce the workflow. Hand-edit where the tools fall short, but not to set
-a status the workflow owns — `verified` and `done` are reached through the
-tools or not at all.
+and guide the workflow. Hand-edit where the tools fall short.
 
-- Plan before code. The hierarchy is Epic → ADR → Story → Task, and the
-  server enforces the order: an Epic needs at least one recorded ADR before
-  stories, a Story before tasks.
+- Plan before code. The recommended flow is Epic → ADR → Story → Task,
+  but the tools suggest rather than enforce — skip steps when it makes
+  sense for the work at hand.
 - Unsure what to do next? Call `get_next_action`.
 - Completion is two-phase: `complete_task` with notes, then `verify_task`
-  with evidence (point at the commit, not the output). Both are required.
+  with evidence (point at the commit, not the output). Both are
+  recommended — the tools will nudge you if you skip a step.
 - After creating tickets, completing tasks, or verifying tasks, offer to
   regenerate the project graph with `export_graph` so the user can see
   the updated picture.

@@ -2,7 +2,7 @@
 
 > **Beta** — the core workflow is stable and tested, but the tool is new. Expect rough edges.
 
-A Jira-lite MCP server that enforces planning-first workflows for AI-assisted development — tickets as markdown files, your AI agent as the interface.
+A Jira-lite MCP server that guides planning-first workflows for AI-assisted development — tickets as markdown files, your AI agent as the interface.
 
 ## Why
 
@@ -41,13 +41,13 @@ Add to your MCP client config (e.g. Claude Code `settings.json`, Claude Desktop 
 }
 ```
 
-Then ask your AI agent to plan some work. The server enforces the hierarchy:
+Then ask your AI agent to plan some work. The recommended flow is:
 
 ```
 init_project  →  plan_epic  →  record_adr  →  create_story  →  create_task
 ```
 
-Each gate must be satisfied before the next: an epic needs at least one ADR before stories can be created, and tasks need a parent story. The agent gets clear error messages telling it what to call instead if it tries to skip ahead.
+The tools suggest this order but don't block you from skipping steps — if the work is straightforward, go straight from epic to stories. You'll get a helpful nudge if the tools think you might want to record a decision first.
 
 Once tasks exist, the execution cycle is:
 
@@ -117,16 +117,15 @@ Not sure what to do next? `get_next_action` reads the current state and returns 
 This project uses primer-mcp for planning-first development. Tickets are
 markdown files under `primer/` — they are yours to read and edit. Prefer the
 tools for creating and updating them: they allocate IDs, follow the templates
-and enforce the workflow. Hand-edit where the tools fall short, but not to set
-a status the workflow owns — `verified` and `done` are reached through the
-tools or not at all.
+and guide the workflow. Hand-edit where the tools fall short.
 
-- Plan before code. The hierarchy is Epic -> ADR -> Story -> Task, and the
-  server enforces the order: an Epic needs at least one recorded ADR before
-  stories, a Story before tasks.
+- Plan before code. The recommended flow is Epic -> ADR -> Story -> Task,
+  but the tools suggest rather than enforce — skip steps when it makes
+  sense for the work at hand.
 - Unsure what to do next? Call `get_next_action`.
 - Completion is two-phase: `complete_task` with notes, then `verify_task`
-  with evidence (point at the commit, not the output). Both are required.
+  with evidence (point at the commit, not the output). Both are
+  recommended — the tools will nudge you if you skip a step.
 - After creating tickets, completing tasks, or verifying tasks, offer to
   regenerate the project graph with `export_graph` so the user can see
   the updated picture.

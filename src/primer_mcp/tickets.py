@@ -171,10 +171,7 @@ def record_adr(
     path.write_text(dumps_ticket(adr, body), encoding="utf-8")
     return [
         f"Recorded {adr_id}: {title} (decision for {epic_id})",
-        (
-            f"{epic_id} now satisfies the ADR gate — create_story is unlocked "
-            "once it lands, or record further ADRs."
-        ),
+        f"Decision captured. Record further ADRs or create stories under {epic_id}.",
     ]
 
 
@@ -187,7 +184,8 @@ def create_story(
     definition_of_done: list[str] | None = None,
 ) -> list[str]:
     """
-    Create a Story under an epic. Gate: epic must exist and have at least one ADR.
+    Create a Story under an epic. The epic must exist. Suggests recording an
+    ADR first if the epic has none, but does not block.
     """
     primer = require_store(project_dir)
 
@@ -208,11 +206,12 @@ def create_story(
         frontmatter.loads(p.read_text(encoding="utf-8")).metadata.get("epic_id") == epic_id
         for p in (primer / "adrs").glob("ADR-*.md")
     )
+    nudge: str | None = None
     if not has_adr:
-        raise GateError(
-            f"Cannot create story: epic {epic_id} has no ADRs. "
-            f"Record at least one architectural decision first: "
-            f'record_adr(epic_id="{epic_id}", ...)'
+        nudge = (
+            f"Tip: {epic_id} has no recorded decisions yet. Consider calling "
+            f'record_adr(epic_id="{epic_id}", ...) to capture the reasoning '
+            f"before it gets lost — even a short one helps future readers."
         )
 
     story_id = next_id(primer, "story")
@@ -237,11 +236,14 @@ def create_story(
     )
     path = primer / "stories" / f"{story_id}.md"
     path.write_text(dumps_ticket(story, body), encoding="utf-8")
-    return [
+    lines = [
         f"Created {story_id}: {title} ({path})",
         f'Next: create tasks with create_task(story_id="{story_id}", ...).',
         *recompute_parents(project_dir, story_id),
     ]
+    if nudge:
+        lines.append(nudge)
+    return lines
 
 
 def create_task(
@@ -331,7 +333,8 @@ def start_task(
     task_id: str,
 ) -> list[str]:
     """
-    Transition a task to in-progress. Gate: task must exist and be in todo or blocked.
+    Transition a task to in-progress. Proceeds from any status with a nudge
+    when the transition is unusual.
     """
     primer = require_store(project_dir)
     task_path = _require_ticket(primer, task_id, "task", "start task")
@@ -339,25 +342,33 @@ def start_task(
     ticket, body = loads_ticket(task_path.read_text(encoding="utf-8"))
     assert isinstance(ticket, Task)
 
+    nudge: str | None = None
     if ticket.status == "in-progress":
-        raise GateError(
-            f"Task {task_id} is already in-progress. "
-            f'Call complete_task(task_id="{task_id}", notes="...") when the work is done.'
+        return [
+            f"Task {task_id} is already in-progress.",
+            f'Call complete_task(task_id="{task_id}", notes="...") when the work is done.',
+        ]
+    if ticket.status == "completed":
+        nudge = (
+            f"Note: {task_id} was already completed — setting it back to in-progress. "
+            f"The completion notes are preserved."
         )
-    if ticket.status in ("completed", "verified"):
-        raise GateError(
-            f"Cannot start task: {task_id} has status {ticket.status!r} "
-            f"and cannot go back to in-progress. "
-            f"Create a follow-up task under the same story if more work is needed."
+    elif ticket.status == "verified":
+        nudge = (
+            f"Note: {task_id} was already verified — reopening it. "
+            f"Consider whether a follow-up task would be clearer."
         )
 
     today = datetime.now(tz=UTC).date()
     updated = ticket.model_copy(update={"status": "in-progress", "updated": today})
     task_path.write_text(dumps_ticket(updated, body), encoding="utf-8")
-    return [
+    lines = [
         f"Started {task_id}: {ticket.title} (status: in-progress)",
         f'Next: call complete_task(task_id="{task_id}", notes="...") when done.',
     ]
+    if nudge:
+        lines.append(nudge)
+    return lines
 
 
 def complete_task(
@@ -366,7 +377,8 @@ def complete_task(
     notes: str,
 ) -> list[str]:
     """
-    Complete a task. Gate: task must be in-progress.
+    Complete a task with notes on what was done. Proceeds from any status
+    with a nudge when the transition is unusual.
     """
     primer = require_store(project_dir)
     task_path = _require_ticket(primer, task_id, "task", "complete task")
@@ -374,26 +386,23 @@ def complete_task(
     ticket, body = loads_ticket(task_path.read_text(encoding="utf-8"))
     assert isinstance(ticket, Task)
 
+    nudge: str | None = None
     if ticket.status == "todo":
-        raise GateError(
-            f"Cannot complete task: {task_id} has not been started. "
-            f'Call start_task(task_id="{task_id}") first.'
+        nudge = (
+            f"Tip: {task_id} hadn't been started yet — marking it completed directly. "
+            f"Next time, start_task first so the timeline is accurate."
         )
-    if ticket.status == "blocked":
-        raise GateError(
-            f"Cannot complete task: {task_id} is blocked. "
-            f'Call get_ticket(ticket_id="{task_id}") to see what blocks it, '
-            f"then resolve or remove the edges with update_ticket."
+    elif ticket.status == "blocked":
+        nudge = (
+            f"Note: {task_id} was marked as blocked — completing it anyway. "
+            f"You may want to check whether the blocker was resolved."
         )
-    if ticket.status == "completed":
-        raise GateError(
-            f"Task {task_id} is already completed. "
-            f'Next: call verify_task(task_id="{task_id}", evidence="...").'
-        )
-    if ticket.status == "verified":
-        raise GateError(
-            f"Task {task_id} is already verified (terminal state). "
-            f"Create a follow-up task if more work is needed."
+    elif ticket.status == "completed":
+        nudge = f"Note: updating completion notes on {task_id} (was already completed)."
+    elif ticket.status == "verified":
+        nudge = (
+            f"Note: {task_id} was already verified — reopening it as completed. "
+            f"Consider whether a follow-up task would be clearer."
         )
 
     today = datetime.now(tz=UTC).date()
@@ -402,10 +411,13 @@ def complete_task(
     )
     body = _update_section(body, "Completion Notes", notes)
     task_path.write_text(dumps_ticket(updated, body), encoding="utf-8")
-    return [
+    lines = [
         f"Completed {task_id}: {ticket.title} (status: completed)",
-        f'Next: call verify_task(task_id="{task_id}", evidence="...") with test output or proof.',
+        f'Next: call verify_task(task_id="{task_id}", evidence="...") to finalise.',
     ]
+    if nudge:
+        lines.append(nudge)
+    return lines
 
 
 def verify_task(
@@ -414,7 +426,8 @@ def verify_task(
     evidence: str,
 ) -> list[str]:
     """
-    Verify a completed task. Gate: task must be completed (two-phase gate).
+    Verify a task with evidence that the work holds. Proceeds from any
+    status with a nudge when the transition is unusual.
     """
     primer = require_store(project_dir)
     task_path = _require_ticket(primer, task_id, "task", "verify task")
@@ -422,22 +435,19 @@ def verify_task(
     ticket, body = loads_ticket(task_path.read_text(encoding="utf-8"))
     assert isinstance(ticket, Task)
 
+    nudge: str | None = None
     if ticket.status in ("todo", "in-progress"):
-        raise GateError(
-            f"Cannot verify task: {task_id} has status {ticket.status!r}. "
-            f'Call complete_task(task_id="{task_id}", notes="...") first.'
+        nudge = (
+            f"Tip: {task_id} wasn't completed first — verifying it directly. "
+            f"Next time, complete_task first so the notes capture what was done."
         )
-    if ticket.status == "blocked":
-        raise GateError(
-            f"Cannot verify task: {task_id} is blocked. "
-            f'Call get_ticket(ticket_id="{task_id}") to see what blocks it, '
-            f"then resolve the blockers and call complete_task before verifying."
+    elif ticket.status == "blocked":
+        nudge = (
+            f"Note: {task_id} was marked as blocked — verifying it anyway. "
+            f"You may want to check whether the blocker was resolved."
         )
-    if ticket.status == "verified":
-        raise GateError(
-            f"Task {task_id} is already verified (terminal state). "
-            f"Create a follow-up task if more work is needed."
-        )
+    elif ticket.status == "verified":
+        nudge = f"Note: updating verification evidence on {task_id} (was already verified)."
 
     today = datetime.now(tz=UTC).date()
     updated = ticket.model_copy(
@@ -445,11 +455,14 @@ def verify_task(
     )
     body = _update_section(body, "Verification Evidence", evidence)
     task_path.write_text(dumps_ticket(updated, body), encoding="utf-8")
-    return [
+    lines = [
         f"Verified {task_id}: {ticket.title} (status: verified — done)",
         f"Task {task_id} is complete. No further action needed.",
         *recompute_parents(project_dir, task_id),
     ]
+    if nudge:
+        lines.append(nudge)
+    return lines
 
 
 def complete_spike(
@@ -458,7 +471,8 @@ def complete_spike(
     findings: str,
 ) -> list[str]:
     """
-    Complete a spike with findings. Gate: spike must be todo or in-progress.
+    Complete a spike with findings. Proceeds from any status with a nudge
+    when the transition is unusual.
     """
     primer = require_store(project_dir)
     spike_path = _require_ticket(primer, spike_id, "spike", "complete spike")
@@ -466,17 +480,14 @@ def complete_spike(
     ticket, body = loads_ticket(spike_path.read_text(encoding="utf-8"))
     assert isinstance(ticket, Spike)
 
+    nudge: str | None = None
     if ticket.status == "blocked":
-        raise GateError(
-            f"Cannot complete spike: {spike_id} is blocked. "
-            f'Call get_ticket(ticket_id="{spike_id}") to see what blocks it, '
-            f"then resolve or remove the edges with update_ticket."
+        nudge = (
+            f"Note: {spike_id} was marked as blocked — completing it anyway. "
+            f"You may want to check whether the blocker was resolved."
         )
-    if ticket.status == "done":
-        raise GateError(
-            f"Spike {spike_id} is already done. "
-            f"Create a follow-up spike under the same story if the question has changed."
-        )
+    elif ticket.status == "done":
+        nudge = f"Note: updating findings on {spike_id} (was already done)."
 
     today = datetime.now(tz=UTC).date()
     updated = ticket.model_copy(
@@ -484,8 +495,11 @@ def complete_spike(
     )
     body = _update_section(body, "Findings", findings)
     spike_path.write_text(dumps_ticket(updated, body), encoding="utf-8")
-    return [
+    lines = [
         f"Completed {spike_id}: {ticket.title} (status: done)",
         f"Findings recorded. Spike {spike_id} is closed.",
         *recompute_parents(project_dir, spike_id),
     ]
+    if nudge:
+        lines.append(nudge)
+    return lines

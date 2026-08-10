@@ -143,31 +143,32 @@ class TestTerminalGuard:
         complete_task(project, task_id, "notes")
         verify_task(project, task_id, "evidence")
 
-    def test_a_verified_task_cannot_be_reopened(self, project: Path) -> None:
+    def test_verified_task_reopens_with_nudge(self, project: Path) -> None:
         self.finish(project, "TK-001")
-        with pytest.raises(GateError, match="terminal"):
-            update_ticket(project, "TK-001", status="in-progress")
+        result = update_ticket(project, "TK-001", status="in-progress")
+        assert status_of(project, "TK-001") == "in-progress"
+        assert any("terminal" in line for line in result)
 
     def test_a_completed_task_can_go_back_to_in_progress(self, project: Path) -> None:
-        # `completed` is intermediate: no evidence recorded yet, nothing to
-        # contradict, and no parent's criteria change.
         start_task(project, "TK-001")
         complete_task(project, "TK-001", "notes")
         update_ticket(project, "TK-001", status="in-progress")
         assert status_of(project, "TK-001") == "in-progress"
 
-    def test_a_done_spike_cannot_be_reopened(self, project: Path) -> None:
+    def test_done_spike_reopens_with_nudge(self, project: Path) -> None:
         spike_id = _id(create_spike(project, "ST-001", "S", question="?", timebox="1h"))
         complete_spike(project, spike_id, "findings")
-        with pytest.raises(GateError, match="terminal"):
-            update_ticket(project, spike_id, status="todo")
+        result = update_ticket(project, spike_id, status="todo")
+        assert status_of(project, spike_id) == "todo"
+        assert any("terminal" in line for line in result)
 
-    def test_a_done_story_cannot_be_reopened(self, project: Path) -> None:
+    def test_done_story_reopens_with_nudge(self, project: Path) -> None:
         self.finish(project, "TK-001")
         self.finish(project, "TK-002")
         assert status_of(project, "ST-001") == "done"
-        with pytest.raises(GateError, match="terminal"):
-            update_ticket(project, "ST-001", status="in-progress")
+        result = update_ticket(project, "ST-001", status="in-progress")
+        assert status_of(project, "ST-001") == "in-progress"
+        assert any("terminal" in line for line in result)
 
 
 class TestUpdateEdges:

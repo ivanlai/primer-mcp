@@ -22,6 +22,7 @@ EXPECTED_TOOLS = {
     "get_ticket",
     "list_tickets",
     "update_ticket",
+    "export_graph",
 }
 
 

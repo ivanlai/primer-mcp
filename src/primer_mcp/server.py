@@ -129,6 +129,9 @@ def create_server(project_dir: Path) -> MCPServer:
         Create a Story under an epic — a deliverable with acceptance criteria.
         The epic must exist. If no ADR has been recorded yet, the response
         will suggest capturing decisions first, but the story is still created.
+
+        After creating stories, present the plan to the user and wait for
+        their agreement before creating tasks or starting work.
         """
 
         return _gated(
@@ -150,8 +153,11 @@ def create_server(project_dir: Path) -> MCPServer:
     ) -> str:
         """
         Create a Task under a story — a concrete unit of implementation work
-        with a testable outcome. The parent story must already exist. After
-        creation, call start_task to begin work.
+        with a testable outcome. The parent story must already exist.
+
+        After breaking a story into tasks, present the task list to the
+        user before starting work — don't create tasks and immediately
+        begin implementing.
 
         For small bug fixes (1–2 tasks), prefer adding a task under the
         standing bug-fix story rather than creating a new story. Suggest

@@ -325,6 +325,11 @@ class TestStartTask:
         start_task(project, task_id)
         result = start_task(project, task_id)
         assert any("already in-progress" in line for line in result)
+        reloaded, _ = loads_ticket(
+            (project / f"primer/tasks/{task_id}.md").read_text()
+        )
+        assert isinstance(reloaded, Task)
+        assert reloaded.status == "in-progress"
 
     def test_completed_reopens_with_nudge(self, project: Path) -> None:
         task_id = self._make_task(project)
@@ -335,8 +340,10 @@ class TestStartTask:
         path.write_text(dumps_ticket(completed, body), encoding="utf-8")
 
         result = start_task(project, task_id)
-        assert any("in-progress" in line for line in result)
         assert any("already completed" in line for line in result)
+        reloaded, _ = loads_ticket(path.read_text())
+        assert isinstance(reloaded, Task)
+        assert reloaded.status == "in-progress"
 
     def test_verified_reopens_with_nudge(self, project: Path) -> None:
         task_id = self._make_task(project)
@@ -347,8 +354,10 @@ class TestStartTask:
         path.write_text(dumps_ticket(verified, body), encoding="utf-8")
 
         result = start_task(project, task_id)
-        assert any("in-progress" in line for line in result)
         assert any("already verified" in line for line in result)
+        reloaded, _ = loads_ticket(path.read_text())
+        assert isinstance(reloaded, Task)
+        assert reloaded.status == "in-progress"
 
     def test_gate_task_not_found(self, project: Path) -> None:
         with pytest.raises(GateError, match="TK-999"):
@@ -418,8 +427,13 @@ class TestCompleteTask:
         lines = create_task(project, story_id, "t", "w", "o")
         task_id = lines[0].split()[1].rstrip(":")
         result = complete_task(project, task_id, "notes")
-        assert any("completed" in line.lower() for line in result)
         assert any("start_task" in line for line in result)
+        reloaded, _ = loads_ticket(
+            (project / f"primer/tasks/{task_id}.md").read_text()
+        )
+        assert isinstance(reloaded, Task)
+        assert reloaded.status == "completed"
+        assert reloaded.completed_notes == "notes"
 
     def test_blocked_completes_with_nudge(self, project: Path) -> None:
         task_id = _make_in_progress_task(project)
@@ -430,8 +444,10 @@ class TestCompleteTask:
             dumps_ticket(ticket.model_copy(update={"status": "blocked"}), body)
         )
         result = complete_task(project, task_id, "notes")
-        assert any("completed" in line.lower() for line in result)
         assert any("blocked" in line for line in result)
+        reloaded, _ = loads_ticket(path.read_text())
+        assert isinstance(reloaded, Task)
+        assert reloaded.status == "completed"
 
     def test_already_completed_updates_notes(self, project: Path) -> None:
         task_id = _make_in_progress_task(project)
@@ -507,14 +523,23 @@ class TestVerifyTask:
         lines = create_task(project, story_id, "t", "w", "o")
         task_id = lines[0].split()[1].rstrip(":")
         result = verify_task(project, task_id, "evidence")
-        assert any("verified" in line for line in result)
         assert any("complete_task" in line for line in result)
+        reloaded, _ = loads_ticket(
+            (project / f"primer/tasks/{task_id}.md").read_text()
+        )
+        assert isinstance(reloaded, Task)
+        assert reloaded.status == "verified"
+        assert reloaded.verified_evidence == "evidence"
 
     def test_in_progress_verifies_with_nudge(self, project: Path) -> None:
         task_id = _make_in_progress_task(project)
         result = verify_task(project, task_id, "evidence")
-        assert any("verified" in line for line in result)
         assert any("complete_task" in line for line in result)
+        reloaded, _ = loads_ticket(
+            (project / f"primer/tasks/{task_id}.md").read_text()
+        )
+        assert isinstance(reloaded, Task)
+        assert reloaded.status == "verified"
 
     def test_blocked_verifies_with_nudge(self, project: Path) -> None:
         task_id = _make_in_progress_task(project)
@@ -525,8 +550,10 @@ class TestVerifyTask:
             dumps_ticket(ticket.model_copy(update={"status": "blocked"}), body)
         )
         result = verify_task(project, task_id, "evidence")
-        assert any("verified" in line for line in result)
         assert any("blocked" in line for line in result)
+        reloaded, _ = loads_ticket(path.read_text())
+        assert isinstance(reloaded, Task)
+        assert reloaded.status == "verified"
 
     def test_already_verified_updates_evidence(self, project: Path) -> None:
         task_id = _make_in_progress_task(project)
@@ -605,8 +632,10 @@ class TestCompleteSpike:
             dumps_ticket(ticket.model_copy(update={"status": "blocked"}), body)
         )
         result = complete_spike(project, spike_id, "findings")
-        assert any("done" in line for line in result)
         assert any("blocked" in line for line in result)
+        reloaded, _ = loads_ticket(path.read_text())
+        assert isinstance(reloaded, Spike)
+        assert reloaded.status == "done"
 
     def test_already_done_updates_findings(self, project: Path) -> None:
         spike_id = _make_spike(project)

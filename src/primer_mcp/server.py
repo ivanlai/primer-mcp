@@ -20,6 +20,7 @@ from typing import Any
 
 from mcp.server.mcpserver import MCPServer
 
+from primer_mcp import export as export_mod
 from primer_mcp import project, query, tickets
 from primer_mcp.errors import GateError
 
@@ -271,6 +272,22 @@ def create_server(project_dir: Path) -> MCPServer:
             blocked_by,
             body_sections,
             external_ref,
+        )
+
+    @server.tool(name="export_graph")
+    def export_graph(output_path: str | None = None) -> str:
+        """
+        Generate a self-contained HTML file visualising the project as an
+        interactive graph. Opens in any browser with no external requests.
+        Nodes are coloured by type and status; edges show both hierarchy
+        (epic -> story -> task) and dependencies (blocked_by). Click a node
+        to see its details. On-demand — call when you want a snapshot.
+        """
+
+        return _gated(
+            export_mod.export_graph,
+            project_dir,
+            Path(output_path) if output_path else None,
         )
 
     return server

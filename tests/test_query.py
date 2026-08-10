@@ -337,12 +337,12 @@ class TestLadderPrecedence:
         answer = next_action(project)
         assert "verify_task" in answer and "create_task" not in answer
 
-    def test_ready_work_outranks_planning_another_story(self, project: Path) -> None:
-        # Found by dogfooding: a real backlog is mostly task-less stories, so
-        # the other order proposes planning forever while work sits ready.
+    def test_unplanned_story_outranks_ready_task(self, project: Path) -> None:
+        # An unplanned story should be broken down before the agent picks up
+        # work under a newer story.
         create_story(project, "EP-001", "Story with no tasks", what="w")
         answer = next_action(project)
-        assert "start_task" in answer and "create_task" not in answer
+        assert "create_task" in answer and "start_task" not in answer
 
     def test_a_second_epic_stays_invisible(self, project: Path) -> None:
         # One epic at a time: EP-002's work is unreachable until EP-001 closes.

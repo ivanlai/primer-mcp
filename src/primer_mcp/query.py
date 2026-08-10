@@ -261,15 +261,14 @@ def get_next_action(project_dir: Path) -> list[str]:
         4. a task is completed      -> verify_task      | task state before
         5. a task is in progress    -> complete_task    | creating anything
         6. no stories               -> create_story
-        7. a ready task or spike    -> start_task / complete_spike
-        8. a story with no tasks    -> create_task
+        7. a story with no tasks    -> create_task      | plan before picking
+        8. a ready task or spike    -> start_task / complete_spike
         9. nothing ready            -> name what is in the way
 
     Two of those orderings were decisions rather than accidents (ADR-001):
     4 and 5 above 6, because a half-open two-phase gate is the dangling state
-    the workflow exists to prevent; and 7 above 8, because a real backlog is
-    mostly stories without tasks yet, so the other order proposes planning
-    forever while a ready task sits idle.
+    the workflow exists to prevent; and 7 above 8, because an unplanned story
+    should be broken down before the agent picks up work under a newer story.
     """
     try:
         tickets = load_tickets(project_dir)
@@ -341,6 +340,17 @@ def get_next_action(project_dir: Path) -> list[str]:
             f'create_story(epic_id="{epic.id}", ...) — a deliverable with acceptance criteria.',
         )
 
+    # Unplanned stories before ready tasks: a story with no tasks should be
+    # broken down before the agent picks up work under a newer story.
+    childless = [s for s in stories if s.status == "todo" and not children_of(tickets, s.id)]
+    if childless:
+        story = _oldest(childless)
+        return _answer(
+            f"{story.id} ({story.title}) has no tasks yet.",
+            f'create_task(story_id="{story.id}", ...) — small enough for one session, '
+            "with a testable outcome.",
+        )
+
     # Ready work before planning more of it.
     for ticket_id in nx.lexicographical_topological_sort(graph, key=sort_key):
         ticket = scope.get(ticket_id)
@@ -360,15 +370,6 @@ def get_next_action(project_dir: Path) -> list[str]:
         return _answer(
             f"{ticket.id} ({ticket.title}) is ready.",
             f'start_task(task_id="{ticket.id}") when you begin.',
-        )
-
-    childless = [s for s in stories if not children_of(tickets, s.id)]
-    if childless:
-        story = _oldest(childless)
-        return _answer(
-            f"{story.id} ({story.title}) has no tasks yet.",
-            f'create_task(story_id="{story.id}", ...) — small enough for one session, '
-            "with a testable outcome.",
         )
 
     # Nothing is ready, so say what is in the way rather than going quiet.

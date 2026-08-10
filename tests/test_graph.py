@@ -19,7 +19,7 @@ from primer_mcp.graph import (
     sort_key,
 )
 from primer_mcp.models import Adr, Epic, Spike, Story, Task, Ticket
-from primer_mcp.project import SUBDIR_FOR_TYPE, init_project
+from primer_mcp.project import SUBDIR_FOR_TYPE
 from primer_mcp.storage import dumps_ticket
 
 TODAY = date(2026, 1, 1)
@@ -83,15 +83,6 @@ def adr(id: str = "ADR-001", epic_id: str = "EP-001") -> Adr:
         consequences="q",
     )
 
-
-@pytest.fixture
-def project(tmp_path: Path) -> Path:
-    """
-    The *project* directory. Every path-taking entry point in the package
-    takes this and resolves primer/ itself.
-    """
-    init_project(tmp_path, "demo")
-    return tmp_path
 
 
 class TestSortKey:

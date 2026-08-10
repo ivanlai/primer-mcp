@@ -290,4 +290,144 @@ def create_server(project_dir: Path) -> MCPServer:
             Path(output_path) if output_path else None,
         )
 
+    # -- MCP Prompts -------------------------------------------------------
+
+    @server.prompt(
+        name="plan_story",
+        description="Scaffold a planning conversation before creating a story.",
+    )
+    def plan_story(epic_id: str | None = None) -> str:
+        parts = [
+            (
+                "You are about to plan a new story. Work through these points"
+                " before calling create_story:\n"
+            ),
+        ]
+        if epic_id:
+            parts.append(
+                f"Start by reading the parent epic for context:"
+                f" get_ticket(ticket_id=\"{epic_id}\").\n"
+            )
+        parts.append(
+            "1. **Title** — one line summarising the deliverable.\n"
+            "2. **What** — what will be built or changed, at overview level.\n"
+            "3. **Acceptance criteria** — testable conditions that prove the"
+            " story is done. Each criterion should be independently"
+            " verifiable.\n"
+            "4. **Definition of done** — checklist of quality gates (tests,"
+            " docs, lint, etc.).\n"
+            "5. **Dependencies** — other tickets this story is blocked_by,"
+            " if any.\n"
+            "\nOnce the plan is clear, call create_story with the agreed"
+            " fields."
+        )
+        return "\n".join(parts)
+
+    @server.prompt(
+        name="export_jira",
+        description="Scaffold exporting primer-mcp tickets to Jira.",
+    )
+    def export_jira(epic_id: str | None = None) -> str:
+        scope = (
+            f'Start by listing tickets under epic {epic_id}:'
+            f' list_tickets() and filter to that epic.'
+            if epic_id
+            else "Start by listing all tickets: list_tickets()."
+        )
+        project_name = project_dir.name
+        return (
+            "Export primer-mcp tickets to Jira using the client's Jira MCP"
+            " server.\n\n"
+            "## Jira project key\n\n"
+            "Before creating issues, confirm the Jira project key with"
+            " the user. Suggest a key based on the project directory"
+            f" name (`{project_name}`) — for example,"
+            f" `{project_name[:5].upper().replace('-', '')}`. Ask the"
+            " user to confirm or choose a different key.\n\n"
+            f"{scope}\n\n"
+            "## Field mapping\n\n"
+            "| primer-mcp | Jira |\n"
+            "|------------|------|\n"
+            "| Epic | Epic |\n"
+            "| Story | Story |\n"
+            "| Task | Task (or Sub-task of the story) |\n"
+            "| Spike | Spike (or Task labelled `spike`) |\n"
+            "| ADR | Confluence page or issue labelled `adr`,"
+            " linked to the Epic |\n"
+            "| `title` | Summary |\n"
+            "| markdown body | Description |\n"
+            "| `acceptance_criteria` | Description checklist"
+            " (or AC custom field) |\n"
+            "| `blocked_by` | Issue links"
+            ' "blocks" / "is blocked by" |\n'
+            "| `status` | todo → To Do, in-progress → In Progress,"
+            " completed/verified/done → Done, blocked → flagged |\n\n"
+            "Jira workflows vary per instance — map each status to the"
+            " nearest available column rather than assuming these exact"
+            " names.\n\n"
+            "## Export order\n\n"
+            "Create in hierarchy order so parents exist before children:"
+            " epics, then ADRs, then stories, then tasks and spikes.\n\n"
+            "## Idempotent re-export\n\n"
+            "Before creating a Jira issue, check the ticket's"
+            " `external_ref.jira` field. If it already contains a Jira"
+            " key, update that existing issue instead of creating a"
+            " duplicate.\n\n"
+            "After creating a new Jira issue, record its key back on"
+            " the primer-mcp ticket:\n"
+            '  update_ticket(ticket_id="XX-001",'
+            ' external_ref={"jira": "PROJ-123"})\n\n'
+            "This makes future re-exports update rather than duplicate."
+        )
+
+    @server.prompt(
+        name="import_jira",
+        description="Scaffold importing a Jira epic into primer-mcp.",
+    )
+    def import_jira(jira_epic_key: str | None = None) -> str:
+        scope = (
+            f"Start by reading the Jira epic {jira_epic_key} and its"
+            " children."
+            if jira_epic_key
+            else "Identify the Jira epic to import and read it with its"
+            " children."
+        )
+        return (
+            "Import a Jira epic and its hierarchy into primer-mcp using"
+            " the client's Jira MCP server.\n\n"
+            f"{scope}\n\n"
+            "## Type mapping\n\n"
+            "| Jira | primer-mcp |\n"
+            "|------|------------|\n"
+            "| Epic | Epic (plan_epic) |\n"
+            "| Issue labelled `adr` / Confluence page | ADR"
+            " (record_adr) |\n"
+            "| Story | Story (create_story) |\n"
+            "| Task / Sub-task | Task (create_task) |\n"
+            "| Spike / Task labelled `spike` | Spike"
+            " (create_spike) |\n\n"
+            "## Creation order (gate order)\n\n"
+            "primer-mcp enforces a strict hierarchy. Create in this"
+            " order:\n\n"
+            "1. **Epic** — call plan_epic with the Jira epic's fields.\n"
+            "2. **ADR** — call record_adr under the epic. If the Jira"
+            " epic has no ADR equivalent, create a placeholder noting"
+            " the import.\n"
+            "3. **Stories** — call create_story for each Jira story.\n"
+            "4. **Tasks and spikes** — call create_task or create_spike"
+            " under the appropriate story.\n\n"
+            "## Idempotent re-import\n\n"
+            "Before creating a ticket, list existing tickets and check"
+            " their `external_ref.jira` field. If a primer-mcp ticket"
+            " already has the Jira key you are about to import, skip"
+            " it or update it instead of creating a duplicate.\n\n"
+            "## Record Jira keys\n\n"
+            "After creating each primer-mcp ticket, record the"
+            " original Jira key in external_ref:\n"
+            '  update_ticket(ticket_id="XX-001",'
+            ' external_ref={"jira": "PROJ-123"})\n\n'
+            "This links the two systems so future imports and exports"
+            " detect existing tickets rather than duplicating."
+        )
+
     return server

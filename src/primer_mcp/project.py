@@ -66,7 +66,7 @@ tools or not at all.
   stories, a Story before tasks.
 - Unsure what to do next? Call `get_next_action`.
 - Completion is two-phase: `complete_task` with notes, then `verify_task`
-  with evidence (test output, command run). Both are required.
+  with evidence (point at the commit, not the output). Both are required.
 - After creating tickets, completing tasks, or verifying tasks, offer to
   regenerate the project graph with `export_graph` so the user can see
   the updated picture.

@@ -122,6 +122,7 @@ def create_server(project_dir: Path) -> MCPServer:
         what: str,
         acceptance_criteria: list[str] | None = None,
         definition_of_done: list[str] | None = None,
+        adr_ids: list[str] | None = None,
     ) -> str:
         """
         Create a Story under an epic — a deliverable with acceptance criteria.
@@ -130,6 +131,9 @@ def create_server(project_dir: Path) -> MCPServer:
         the epic, asking for clarification if needed. If no ADR has been
         recorded, the response will suggest capturing decisions first, but
         the story is still created.
+
+        Pass adr_ids to link the story to the architectural decisions that
+        govern it. Each ADR must exist and belong to the same epic.
 
         After creating stories, present the plan to the user and wait for
         their agreement before creating tasks or starting work.
@@ -143,6 +147,7 @@ def create_server(project_dir: Path) -> MCPServer:
             what,
             acceptance_criteria,
             definition_of_done,
+            adr_ids,
         )
 
     @server.tool(name="create_task")

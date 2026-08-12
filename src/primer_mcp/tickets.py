@@ -160,6 +160,23 @@ def record_adr(
     ]
 
 
+def _validate_adr_ids(primer: Path, epic_id: str, adr_ids: list[str]) -> list[str]:
+    for adr_id in adr_ids:
+        path = primer / "adrs" / f"{adr_id}.md"
+        if not path.is_file():
+            raise GateError(
+                f"Cannot link ADR: {adr_id!r} not found. "
+                f'Record it first with record_adr(epic_id="{epic_id}", ...).'
+            )
+        meta = frontmatter.loads(path.read_text(encoding="utf-8")).metadata
+        if meta.get("epic_id") != epic_id:
+            raise GateError(
+                f"Cannot link ADR: {adr_id} belongs to {meta.get('epic_id')}, "
+                f"not {epic_id}. ADRs must belong to the same epic as the story."
+            )
+    return adr_ids
+
+
 def create_story(
     project_dir: Path,
     epic_id: str,
@@ -167,6 +184,7 @@ def create_story(
     what: str,
     acceptance_criteria: list[str] | None = None,
     definition_of_done: list[str] | None = None,
+    adr_ids: list[str] | None = None,
 ) -> list[str]:
     """
     Create a Story under an epic. The epic must exist. Suggests recording an
@@ -186,6 +204,8 @@ def create_story(
             f"Cannot create story: epic {epic_id!r} not found. {hint} "
             f"Then call create_story with a valid epic_id."
         )
+
+    validated_adr_ids = _validate_adr_ids(primer, epic_id, adr_ids or [])
 
     has_adr = any(
         frontmatter.loads(p.read_text(encoding="utf-8")).metadata.get("epic_id") == epic_id
@@ -209,6 +229,7 @@ def create_story(
         created=today,
         updated=today,
         epic_id=epic_id,
+        adr_ids=validated_adr_ids,
         acceptance_criteria=ac,
         definition_of_done=dod,
     )
@@ -217,6 +238,7 @@ def create_story(
         what=what,
         acceptance_criteria=ac,
         definition_of_done=dod,
+        adr_ids=validated_adr_ids,
     )
     path = primer / "stories" / f"{story_id}.md"
     path.write_text(dumps_ticket(story, body), encoding="utf-8")

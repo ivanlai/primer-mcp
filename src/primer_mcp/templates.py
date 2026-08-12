@@ -50,9 +50,12 @@ def story_body(
     what: str,
     acceptance_criteria: list[str],
     definition_of_done: list[str],
+    adr_ids: list[str] | None = None,
 ) -> str:
+    adr_links = _bullets([f"[[{aid}]]" for aid in adr_ids], empty="(none)") if adr_ids else "- (none)"
     return (
         f"## Parent Epic\n[[{epic_id}]]\n\n"
+        f"## Governing ADRs\n{adr_links}\n\n"
         f"## What\n{what}\n\n"
         f"## Acceptance Criteria\n{_checklist(acceptance_criteria)}\n\n"
         f"## Definition of Done\n{_checklist(definition_of_done)}\n\n"

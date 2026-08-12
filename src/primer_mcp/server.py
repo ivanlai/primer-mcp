@@ -52,8 +52,9 @@ def create_server(project_dir: Path) -> MCPServer:
     def init_project(project_name: str, jira_project_key: str | None = None) -> str:
         """
         Initialise this project for primer-mcp: creates the primer/ ticket
-        store and adds the workflow section to CLAUDE.md (non-destructive,
-        idempotent). Call this once per project, before any other tool.
+        store and adds the workflow section to CLAUDE.md (and AGENTS.md if
+        it exists). Non-destructive and idempotent. Call this once per
+        project, before any other tool.
         Optionally pass jira_project_key if tickets may later be exported to Jira.
         """
 

@@ -407,6 +407,30 @@ def list_actionable(project_dir: Path) -> list[str]:
         lines.append(f"  - [{mark}] {s.id} {s.title}")
     lines.append("")
 
+    # --- Status drift detection ---
+    drift: list[str] = []
+    for parent in sorted(
+        [p for p in scope.values() if isinstance(p, Epic | Story)],
+        key=lambda p: sort_key(p.id),
+    ):
+        derived = derive_status(tickets, parent.id)
+        stored_done = parent.status == "done"
+        derived_done = derived == "done"
+        if stored_done and not derived_done:
+            drift.append(
+                f"  - {parent.id} ({parent.title}): marked done but has unfinished children"
+                f' — update_ticket(ticket_id="{parent.id}", status="todo") to fix'
+            )
+        elif not stored_done and derived_done:
+            drift.append(
+                f"  - {parent.id} ({parent.title}): all children finished but status is {parent.status}"
+                f' — update_ticket(ticket_id="{parent.id}", status="done") to fix'
+            )
+    if drift:
+        lines.append(f"**Status drift:** {len(drift)} ticket(s) out of sync")
+        lines.extend(drift)
+        lines.append("")
+
     # --- Urgent gates ---
     completed = sorted(
         (t for t in scope.values() if isinstance(t, Task) and t.status == "completed"),

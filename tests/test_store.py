@@ -491,6 +491,40 @@ class TestBlockerReport:
         assert "TK-002 is blocked" in answer
 
 
+def force_status(project: Path, ticket_id: str, status: str) -> None:
+    path = find_path(project, ticket_id)
+    ticket, body = loads_ticket(path.read_text())
+    path.write_text(dumps_ticket(ticket.model_copy(update={"status": status}), body))
+
+
+class TestStatusDrift:
+    def test_stored_todo_but_all_children_done_emits_nudge(self, project: Path) -> None:
+        for task in ("TK-001", "TK-002"):
+            start_task(project, task)
+            complete_task(project, task, "n")
+            verify_task(project, task, "e")
+        force_status(project, "ST-001", "todo")
+        answer = next_action(project)
+        assert "Status drift" in answer
+        assert "ST-001" in answer
+        assert "all children finished" in answer
+
+    def test_stored_done_but_child_reopened_emits_nudge(self, project: Path) -> None:
+        for task in ("TK-001", "TK-002"):
+            start_task(project, task)
+            complete_task(project, task, "n")
+            verify_task(project, task, "e")
+        start_task(project, "TK-001")
+        answer = next_action(project)
+        assert "Status drift" in answer
+        assert "ST-001" in answer
+        assert "unfinished children" in answer
+
+    def test_consistent_store_no_drift(self, project: Path) -> None:
+        answer = next_action(project)
+        assert "Status drift" not in answer
+
+
 class TestOptionsTable:
     """Multiple items at the same priority rung produce a table."""
 

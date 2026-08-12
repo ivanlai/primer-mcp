@@ -25,6 +25,8 @@ EXPECTED_TOOLS = {
     "get_ticket",
     "list_tickets",
     "update_ticket",
+    "delete_ticket",
+    "sweep_blocked_by",
     "export_graph",
 }
 

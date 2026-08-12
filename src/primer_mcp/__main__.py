@@ -36,9 +36,9 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.command == "list-actionable":
-        from primer_mcp import query
+        from primer_mcp import store
 
-        print("\n".join(query.list_actionable(Path(args.project_dir))))
+        print("\n".join(store.list_actionable(Path(args.project_dir))))
     else:
         create_server(Path(args.project_dir)).run("stdio")
 

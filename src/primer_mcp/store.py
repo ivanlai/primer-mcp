@@ -443,13 +443,13 @@ def list_actionable(project_dir: Path) -> list[str]:
         lines.append("")
 
     started = sorted(
-        (t for t in scope.values() if isinstance(t, Task) and t.status == "in-progress"),
+        (t for t in scope.values() if isinstance(t, Task | Spike) and t.status == "in-progress"),
         key=lambda t: sort_key(t.id),
     )
     if started:
         lines.append(f"**In progress:** {len(started)} task(s)")
-        for t in started:
-            lines.append(f"  - {t.id} ({t.title})")
+        for item in started:
+            lines.append(f"  - {item.id} ({item.title})")
         lines.append("")
 
     # --- Actionable items table ---
@@ -460,6 +460,8 @@ def list_actionable(project_dir: Path) -> list[str]:
         key=lambda s: sort_key(s.id),
     )
     for s in childless:
+        if _unfinished_blockers(tickets, graph, s.id):
+            continue
         summary = s.acceptance_criteria[0] if s.acceptance_criteria else "needs tasks"
         options.append([s.id, "—", s.title, summary])
 

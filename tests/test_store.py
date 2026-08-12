@@ -392,6 +392,30 @@ class TestLadderRungs:
         answer = next_action(project)
         assert "SP-001" in answer and "2 hours" in answer
 
+    def test_in_progress_spike_surfaces_ticket(self, project: Path) -> None:
+        for task in ("TK-001", "TK-002"):
+            start_task(project, task)
+            complete_task(project, task, "n")
+            verify_task(project, task, "e")
+        story_id = _id(create_story(project, "EP-001", "Second", what="w"))
+        create_spike(project, story_id, "Investigate", question="?", timebox="2h")
+        update_ticket(project, "SP-001", status="in-progress")
+        answer = next_action(project)
+        assert "SP-001" in answer and "In progress" in answer
+
+    def test_childless_story_blocked_not_actionable(self, project: Path) -> None:
+        for task in ("TK-001", "TK-002"):
+            start_task(project, task)
+            complete_task(project, task, "n")
+            verify_task(project, task, "e")
+        create_story(project, "EP-001", "Second", what="w")
+        create_story(project, "EP-001", "Third", what="w")
+        force_edge(project, "ST-003", ["ST-002"])
+        answer = next_action(project)
+        table = answer[answer.index("**Actionable:**"):]
+        assert "ST-002" in table
+        assert "ST-003" not in table
+
     def test_childless_story_surfaces_story(self, project: Path) -> None:
         for task in ("TK-001", "TK-002"):
             start_task(project, task)

@@ -12,6 +12,7 @@ from primer_mcp.models import Adr, Epic, Spike, Story, Task
 from primer_mcp.storage import dumps_ticket, loads_ticket
 from primer_mcp.tickets import (
     GateError,
+    _update_section,
     complete_spike,
     complete_task,
     create_spike,
@@ -40,6 +41,35 @@ ADR_HEADINGS = [
     "## Consequences",
 ]
 
+
+
+class TestUpdateSection:
+    BODY = (
+        "## What to do\nfix the bug\n\n"
+        "## Completion Notes\nold notes\n\n"
+        "## Verification Evidence\n"
+    )
+
+    def test_replaces_exact_heading(self) -> None:
+        result = _update_section(self.BODY, "Completion Notes", "new notes")
+        assert "new notes" in result
+        assert "old notes" not in result
+        assert "## What to do\nfix the bug" in result
+
+    def test_prefix_heading_raises(self) -> None:
+        with pytest.raises(ValueError, match="Section not found"):
+            _update_section(self.BODY, "What", "oops")
+
+    def test_heading_like_text_mid_line_not_matched(self) -> None:
+        body = "see ## Findings in the other ticket\n\n## Findings\nreal stuff\n"
+        result = _update_section(body, "Findings", "updated")
+        assert "see ## Findings in the other ticket" in result
+        assert "updated" in result
+        assert "real stuff" not in result
+
+    def test_missing_heading_raises(self) -> None:
+        with pytest.raises(ValueError, match="Section not found"):
+            _update_section(self.BODY, "Nonexistent", "content")
 
 
 def make_epic(project: Path, title: str = "First epic") -> str:

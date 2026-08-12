@@ -59,7 +59,10 @@ def _require_ticket(primer: Path, ticket_id: str, ticket_type: str, action: str)
 
 def _update_section(body: str, heading: str, content: str) -> str:
     marker = f"## {heading}"
-    start = body.index(marker) + len(marker)
+    match = re.search(rf"^{re.escape(marker)}$", body, re.MULTILINE)
+    if not match:
+        raise ValueError(f"Section not found: {marker}")
+    start = match.end()
     next_heading = body.find("\n## ", start)
     if next_heading == -1:
         return body[:start] + "\n" + content

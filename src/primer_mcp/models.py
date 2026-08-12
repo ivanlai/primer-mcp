@@ -110,6 +110,7 @@ class Story(TicketBase):
     id: str = Field(pattern=_id_pattern("story"))
     status: Literal["todo", "in-progress", "blocked", "done"] = "todo"
     epic_id: str = Field(pattern=_id_pattern("epic"))
+    adr_ids: list[str] = Field(default_factory=list)
     acceptance_criteria: list[str] = Field(default_factory=list)
     definition_of_done: list[str] = Field(default_factory=list)
 

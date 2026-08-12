@@ -134,6 +134,7 @@ def make_story(project: Path, epic_id: str, title: str = "First story") -> str:
 
 STORY_HEADINGS = [
     "## Parent Epic",
+    "## Governing ADRs",
     "## What",
     "## Acceptance Criteria",
     "## Definition of Done",
@@ -210,6 +211,41 @@ class TestCreateStory:
         result = create_story(project, epic_id, "s", what="w")
         assert any("record_adr" in line for line in result)
         assert any("ST-" in line for line in result)
+
+    def test_create_story_with_adr_ids(self, project: Path) -> None:
+        epic_id = make_epic(project)
+        adr_id = make_adr(project, epic_id)
+        create_story(project, epic_id, "s", what="w", adr_ids=[adr_id])
+        ticket, body = loads_ticket(
+            (project / "primer/stories/ST-001.md").read_text()
+        )
+        assert isinstance(ticket, Story)
+        assert ticket.adr_ids == [adr_id]
+        assert f"[[{adr_id}]]" in body
+
+    def test_create_story_rejects_unknown_adr(self, project: Path) -> None:
+        epic_id = make_epic(project)
+        make_adr(project, epic_id)
+        with pytest.raises(GateError, match="ADR-999"):
+            create_story(project, epic_id, "s", what="w", adr_ids=["ADR-999"])
+
+    def test_create_story_rejects_adr_from_other_epic(self, project: Path) -> None:
+        ep1 = make_epic(project, "First")
+        ep2 = make_epic(project, "Second")
+        adr_id = make_adr(project, ep2)
+        with pytest.raises(GateError, match="belongs to"):
+            create_story(project, ep1, "s", what="w", adr_ids=[adr_id])
+
+    def test_create_story_accepts_empty_adr_ids(self, project: Path) -> None:
+        epic_id = make_epic(project)
+        make_adr(project, epic_id)
+        result = create_story(project, epic_id, "s", what="w", adr_ids=[])
+        assert any("ST-" in line for line in result)
+        ticket, _ = loads_ticket(
+            (project / "primer/stories/ST-001.md").read_text()
+        )
+        assert isinstance(ticket, Story)
+        assert ticket.adr_ids == []
 
 
 class TestCreateTask:

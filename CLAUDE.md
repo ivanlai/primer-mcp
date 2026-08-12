@@ -32,6 +32,7 @@ A Jira-lite MCP server that enforces planning-first workflows for AI-assisted de
 - No filler tests. Every test must verify a real behaviour or acceptance criterion and be able to fail for a real reason — never add tests for coverage's or quantity's sake
 - Tasks must be completable in a single session (~3 files max)
 - One PR per task
+- When a commit is for a ticket, prefix the message with the ticket ID (`TK-030: Rename get_next_action...`). This closes the loop: `git log --grep TK-030` finds the commit, and `verified_evidence` on the ticket points back at the hash. Standalone chores (CLAUDE.md tweaks, typo fixes) need no prefix.
 - Ask before committing and before pushing — the user reviews the working diff, not the PR page
 - Improvements and simplifications wait until after v0 ships. This is a compact project that showcases the workflow, not an enterprise system; a heavier primer-mcp has no reason to exist when Jira already does
 - Completion is two-phase: `complete_task` with notes, then `verify_task` with evidence. Both are required

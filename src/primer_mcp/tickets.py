@@ -19,6 +19,7 @@ from primer_mcp.graph import recompute_parents
 from primer_mcp.models import ID_PREFIX, Adr, Epic, Spike, Story, Task
 from primer_mcp.project import SUBDIR_FOR_TYPE, require_store
 from primer_mcp.storage import dumps_ticket, loads_ticket
+from primer_mcp.templates import adr_body, epic_body, spike_body, story_body, task_body
 
 
 def next_id(primer: Path, ticket_type: str) -> str:
@@ -38,20 +39,6 @@ def next_id(primer: Path, ticket_type: str) -> str:
         if match:
             highest = max(highest, int(match.group(1)))
     return f"{prefix}-{highest + 1:03d}"
-
-
-def _bullets(items: list[str], empty: str = "(none)") -> str:
-    """
-    Render items as a markdown bullet list for ticket bodies,
-    e.g. ["a", "b"] -> "- a\\n- b". An empty list becomes a single
-    placeholder bullet so template sections are never blank.
-    """
-    return "\n".join(f"- {item}" for item in items) if items else f"- {empty}"
-
-
-def _checklist(items: list[str], empty: str = "(none)") -> str:
-    # Like _bullets but with markdown checkboxes: "- [ ] item"
-    return "\n".join(f"- [ ] {item}" for item in items) if items else f"- {empty}"
 
 
 def _require_ticket(primer: Path, ticket_id: str, ticket_type: str, action: str) -> Path:
@@ -104,14 +91,12 @@ def plan_epic(
         non_goals=non_goals or [],
         success_criteria=success_criteria or [],
     )
-    body = (
-        f"## Why\n{why}\n\n"
-        f"## Goals\n{_bullets(goals)}\n\n"
-        f"## Constraints\n{_bullets(constraints or [])}\n\n"
-        f"## Non-Goals\n{_bullets(non_goals or [])}\n\n"
-        f"## Success Criteria\n{_bullets(success_criteria or [])}\n\n"
-        f"## Child ADRs\n- (none yet)\n\n"
-        f"## Child Stories\n- (none yet)"
+    body = epic_body(
+        why=why,
+        goals=goals,
+        constraints=constraints or [],
+        non_goals=non_goals or [],
+        success_criteria=success_criteria or [],
     )
     path = primer / "epics" / f"{epic_id}.md"
     path.write_text(dumps_ticket(epic, body), encoding="utf-8")
@@ -160,12 +145,12 @@ def record_adr(
         alternatives=alternatives,
         consequences=consequences,
     )
-    body = (
-        f"## Parent Epic\n[[{epic_id}]]\n\n"
-        f"## Context\n{context}\n\n"
-        f"## Decision\n{decision}\n\n"
-        f"## Alternatives Considered\n{_bullets(alternatives, empty='(none considered)')}\n\n"
-        f"## Consequences\n{consequences}"
+    body = adr_body(
+        epic_id=epic_id,
+        context=context,
+        decision=decision,
+        alternatives=alternatives,
+        consequences=consequences,
     )
     path = primer / "adrs" / f"{adr_id}.md"
     path.write_text(dumps_ticket(adr, body), encoding="utf-8")
@@ -227,12 +212,11 @@ def create_story(
         acceptance_criteria=ac,
         definition_of_done=dod,
     )
-    body = (
-        f"## Parent Epic\n[[{epic_id}]]\n\n"
-        f"## What\n{what}\n\n"
-        f"## Acceptance Criteria\n{_checklist(ac)}\n\n"
-        f"## Definition of Done\n{_checklist(dod)}\n\n"
-        f"## Dependencies\n- (none)"
+    body = story_body(
+        epic_id=epic_id,
+        what=what,
+        acceptance_criteria=ac,
+        definition_of_done=dod,
     )
     path = primer / "stories" / f"{story_id}.md"
     path.write_text(dumps_ticket(story, body), encoding="utf-8")
@@ -269,13 +253,10 @@ def create_task(
         story_id=story_id,
         testable_outcome=testable_outcome,
     )
-    body = (
-        f"## Parent Story\n[[{story_id}]]\n\n"
-        f"## What to do\n{what_to_do}\n\n"
-        f"## Testable Outcome\n{testable_outcome}\n\n"
-        f"## Dependencies\n- (none)\n\n"
-        f"## Completion Notes\n\n\n"
-        f"## Verification Evidence"
+    body = task_body(
+        story_id=story_id,
+        what_to_do=what_to_do,
+        testable_outcome=testable_outcome,
     )
     path = primer / "tasks" / f"{task_id}.md"
     path.write_text(dumps_ticket(task, body), encoding="utf-8")
@@ -310,11 +291,10 @@ def create_spike(
         question=question,
         timebox=timebox,
     )
-    body = (
-        f"## Parent Story\n[[{story_id}]]\n\n"
-        f"## Question\n{question}\n\n"
-        f"## Timebox\n{timebox}\n\n"
-        f"## Findings"
+    body = spike_body(
+        story_id=story_id,
+        question=question,
+        timebox=timebox,
     )
     path = primer / "spikes" / f"{spike_id}.md"
     path.write_text(dumps_ticket(spike, body), encoding="utf-8")

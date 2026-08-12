@@ -118,17 +118,22 @@ def init_project(
         config_path.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
         lines.append(f"Created {PRIMER_DIR}/config.yaml (project_name: {project_name})")
 
-    claude_md = project_dir / "CLAUDE.md"
-    if not claude_md.exists():
-        claude_md.write_text(CLAUDE_MD_SNIPPET, encoding="utf-8")
-        lines.append("Created CLAUDE.md with the primer-mcp workflow section")
-    elif SNIPPET_HEADING in claude_md.read_text(encoding="utf-8"):
-        lines.append("CLAUDE.md already has the primer-mcp section — left untouched")
-    else:
-        existing = claude_md.read_text(encoding="utf-8")
+    for convention_file in ("CLAUDE.md", "AGENTS.md"):
+        path = project_dir / convention_file
+        if not path.exists():
+            if convention_file == "CLAUDE.md":
+                path.write_text(CLAUDE_MD_SNIPPET, encoding="utf-8")
+                lines.append("Created CLAUDE.md with the primer-mcp workflow section")
+            continue
+        existing = path.read_text(encoding="utf-8")
+        if SNIPPET_HEADING in existing:
+            if convention_file == "CLAUDE.md":
+                lines.append("CLAUDE.md already has the primer-mcp section — left untouched")
+            continue
         separator = "" if existing.endswith("\n\n") else "\n" if existing.endswith("\n") else "\n\n"
-        claude_md.write_text(existing + separator + CLAUDE_MD_SNIPPET, encoding="utf-8")
-        lines.append("Appended the primer-mcp workflow section to existing CLAUDE.md")
+        path.write_text(existing + separator + CLAUDE_MD_SNIPPET, encoding="utf-8")
+        if convention_file == "CLAUDE.md":
+            lines.append("Appended the primer-mcp workflow section to existing CLAUDE.md")
 
     lines.append("Project initialised. Next step: create an epic with plan_epic.")
     return lines

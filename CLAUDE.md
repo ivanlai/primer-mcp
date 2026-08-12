@@ -109,8 +109,10 @@ and guide the workflow. Hand-edit where the tools fall short.
   the updated picture.
 - Before committing, check whether any tickets completed or verified in
   this session have completion notes that still reflect the actual work.
-  If the implementation evolved after the notes were written, update them
-  before staging.
+  If the implementation evolved after the notes were written, update
+  both layers before staging: the frontmatter `completed_notes` (terse
+  one-liner) and the `## Completion Notes` body section (fuller summary
+  — approach taken, key changes, decisions made).
 - When the user reports a bug or small fix, check for a standing bug-fix
   story under the epic before creating a new story. Small fixes (1–2
   tasks) go as tasks under that story; larger efforts (3+ tasks) get

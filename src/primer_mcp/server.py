@@ -1,7 +1,7 @@
 """
 MCP layer: registers the primer-mcp tools on an MCPServer.
 
-Thin by design — business logic lives in project.py, tickets.py and query.py.
+Thin by design — business logic lives in project.py, tickets.py and store.py.
 
 Every docstring below is shipped to the model. MCPServer falls back to
 `fn.__doc__` for a tool's description, so these are the text an agent reads
@@ -21,7 +21,7 @@ from typing import Any
 from mcp.server.mcpserver import MCPServer
 
 from primer_mcp import export as export_mod
-from primer_mcp import project, query, tickets
+from primer_mcp import project, store, tickets
 from primer_mcp.errors import GateError
 
 INSTRUCTIONS = """\
@@ -257,7 +257,7 @@ def create_server(project_dir: Path) -> MCPServer:
         4. If several items are genuinely equal, say so and explain why.
         """
 
-        return _call(query.list_actionable, project_dir)
+        return _call(store.list_actionable, project_dir)
 
     @server.tool(name="get_ticket")
     def get_ticket(ticket_id: str) -> str:
@@ -267,7 +267,7 @@ def create_server(project_dir: Path) -> MCPServer:
         so this is the only way to see it.
         """
 
-        return _call(query.get_ticket, project_dir, ticket_id)
+        return _call(store.get_ticket, project_dir, ticket_id)
 
     @server.tool(name="list_tickets")
     def list_tickets(
@@ -281,7 +281,7 @@ def create_server(project_dir: Path) -> MCPServer:
         that ticket). Use this to find an ID before calling another tool.
         """
 
-        return _call(query.list_tickets, project_dir, ticket_type, status, parent_id)
+        return _call(store.list_tickets, project_dir, ticket_type, status, parent_id)
 
     @server.tool(name="update_ticket")
     def update_ticket(
@@ -302,7 +302,7 @@ def create_server(project_dir: Path) -> MCPServer:
         """
 
         return _call(
-            query.update_ticket,
+            store.update_ticket,
             project_dir,
             ticket_id,
             status,
@@ -320,7 +320,7 @@ def create_server(project_dir: Path) -> MCPServer:
         clean up dangling references. Recoverable from git history.
         """
 
-        return _call(query.delete_ticket, project_dir, ticket_id)
+        return _call(store.delete_ticket, project_dir, ticket_id)
 
     @server.tool(name="sweep_blocked_by")
     def sweep_blocked_by() -> str:
@@ -330,7 +330,7 @@ def create_server(project_dir: Path) -> MCPServer:
         calls.
         """
 
-        return _call(query.sweep_blocked_by, project_dir)
+        return _call(store.sweep_blocked_by, project_dir)
 
     @server.tool(name="export_graph")
     def export_graph(output_path: str | None = None) -> str:

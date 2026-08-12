@@ -1,8 +1,5 @@
 """
-Reading the store and editing tickets after creation.
-
-The three tools an agent needs to work without filesystem access: read one
-ticket, list what exists, and amend a ticket the creation tools already wrote.
+The ticket store: reading, updating, deleting, and listing tickets.
 
 Status is read straight from disk rather than derived — the write tools
 cascade derived done-ness (ADR-002), so what is stored is already true.

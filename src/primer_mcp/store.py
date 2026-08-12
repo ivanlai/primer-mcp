@@ -1,8 +1,5 @@
 """
 The ticket store: reading, updating, deleting, and listing tickets.
-
-Status is read straight from disk rather than derived — the write tools
-cascade derived done-ness (ADR-002), so what is stored is already true.
 """
 
 from __future__ import annotations
@@ -18,6 +15,7 @@ from primer_mcp.graph import (
     TERMINAL_STATUS,
     children_of,
     dependency_graph,
+    derive_status,
     find_cycle,
     find_path,
     load_tickets,
@@ -363,7 +361,7 @@ def list_actionable(project_dir: Path) -> list[str]:
             "before any of it happens.",
         )
 
-    open_epics = [e for e in epics if e.status != "done"]
+    open_epics = [e for e in epics if derive_status(tickets, e.id) != "done"]
     if not open_epics:
         return _answer(
             "Every epic is done. Nothing is outstanding.",
@@ -401,11 +399,11 @@ def list_actionable(project_dir: Path) -> list[str]:
         lines.append(f"  - {g}")
     lines.append("")
 
-    done_stories = [s for s in stories if s.status == "done"]
-    open_stories = [s for s in stories if s.status != "done"]
+    done_stories = [s for s in stories if derive_status(tickets, s.id) == "done"]
+    open_stories = [s for s in stories if derive_status(tickets, s.id) != "done"]
     lines.append(f"**Stories:** {len(done_stories)} done, {len(open_stories)} open")
     for s in sorted(stories, key=lambda t: sort_key(t.id)):
-        mark = "x" if s.status == "done" else " "
+        mark = "x" if derive_status(tickets, s.id) == "done" else " "
         lines.append(f"  - [{mark}] {s.id} {s.title}")
     lines.append("")
 

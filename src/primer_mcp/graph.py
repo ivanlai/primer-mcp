@@ -138,6 +138,10 @@ def derive_status(tickets: dict[str, Ticket], parent_id: str) -> str | None:
     Requires at least one child: "all children are finished" is vacuously
     true of a childless story, which would make a freshly created story
     instantly done. None means "not done", not "unknown".
+
+    For epics the check is recursive: a story is considered terminal only
+    when its own children are all terminal, so a reopened task under a
+    stored-done story correctly makes the epic non-done.
     """
     parent = tickets.get(parent_id)
     if not isinstance(parent, Epic | Story):
@@ -145,7 +149,15 @@ def derive_status(tickets: dict[str, Ticket], parent_id: str) -> str | None:
     children = children_of(tickets, parent_id)
     if not children:
         return None
-    if all(child.status == TERMINAL_STATUS[child.type] for child in children):
+
+    def _is_terminal(child: Ticket) -> bool:
+        if child.status != TERMINAL_STATUS[child.type]:
+            return False
+        if isinstance(child, Story) and children_of(tickets, child.id):
+            return derive_status(tickets, child.id) == "done"
+        return True
+
+    if all(_is_terminal(child) for child in children):
         return "done"
     return None
 

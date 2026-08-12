@@ -400,6 +400,19 @@ class TestLadderRungs:
         create_story(project, "EP-001", "Second", what="w")
         assert "ST-002" in next_action(project)
 
+    def test_reopened_task_under_done_story_still_actionable(self, project: Path) -> None:
+        for task in ("TK-001", "TK-002"):
+            start_task(project, task)
+            complete_task(project, task, "n")
+            verify_task(project, task, "e")
+        assert "Nothing is outstanding" in next_action(project)
+        # Reopen one task — stored parent status is stale but list_actionable
+        # must still surface the task.
+        start_task(project, "TK-001")
+        answer = next_action(project)
+        assert "TK-001" in answer
+        assert "Nothing is outstanding" not in answer
+
     def test_all_done_says_nothing_outstanding(self, project: Path) -> None:
         for task in ("TK-001", "TK-002"):
             start_task(project, task)

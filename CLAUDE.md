@@ -20,9 +20,8 @@ A Jira-lite MCP server that enforces planning-first workflows for AI-assisted de
 ## Workflow gates (enforced by the server — never bypass)
 
 1. Cannot create an ADR without a valid parent Epic
-2. Cannot create a Story without the parent Epic having at least one ADR
-3. Cannot create a Task without a valid parent Story
-4. Cannot call `verify_task` before `complete_task` has been called
+2. Cannot create a Task without a valid parent Story
+3. Cannot call `verify_task` before `complete_task` has been called
 
 ## Development workflow
 

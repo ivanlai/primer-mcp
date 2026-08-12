@@ -231,19 +231,20 @@ IDs are globally unique across all ticket types (EP-, ADR-, ST-, TK-, SP- prefix
 
 ## Workflow Gates
 
-Enforced by the MCP server — these are hard blocks, not warnings:
+Hard gates — the server rejects the call with a steering error:
 
 1. Cannot call `record_adr` without a valid `epic_id`
-2. Cannot call `create_story` unless the parent epic has at least one ADR
-3. Cannot call `create_task` without a valid `story_id`
-4. Cannot call `verify_task` unless `complete_task` has been called first (task status must be `completed`)
-5. `get_next_action` surfaces the first unmet gate in the project
+2. Cannot call `create_task` without a valid `story_id`
+3. Cannot call `verify_task` unless `complete_task` has been called first (task status must be `completed`)
+
+Nudges — the call succeeds, with a suggestion appended:
+
+- `create_story` without an ADR on the epic: story is created, tip suggests `record_adr`
+- `get_next_action` on an epic with no ADRs: suggests recording decisions or creating stories directly
 
 ## Gate Errors Are Agent Steering
 
-The consumer of every error message is an AI agent mid-task, so a gate failure must contain the corrective action, not just the refusal. Every gate error follows the pattern: **what failed → why → the exact next call**. Example:
-
-> `Cannot create story: epic EP-001 has no ADRs. Record at least one architectural decision first: record_adr(epic_id="EP-001", ...)`
+The consumer of every error message is an AI agent mid-task, so a gate failure must contain the corrective action, not just the refusal. Every gate error follows the pattern: **what failed → why → the exact next call**.
 
 Tool descriptions follow the same principle — they are the primary steering surface for agents choosing which tool to call, and are written and reviewed deliberately (see ST-011).
 

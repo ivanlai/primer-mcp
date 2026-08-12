@@ -28,9 +28,19 @@ def main() -> None:
         action="version",
         version=f"%(prog)s {__version__}",
     )
+
+    sub = parser.add_subparsers(dest="command")
+    sub.add_parser("list-actionable", help="Print actionable items and exit")
+    sub.add_parser("serve", help="Start the MCP server (default)")
+
     args = parser.parse_args()
 
-    create_server(Path(args.project_dir)).run("stdio")
+    if args.command == "list-actionable":
+        from primer_mcp import query
+
+        print("\n".join(query.list_actionable(Path(args.project_dir))))
+    else:
+        create_server(Path(args.project_dir)).run("stdio")
 
 
 if __name__ == "__main__":

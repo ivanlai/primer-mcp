@@ -59,33 +59,17 @@ mypy                 # type checking (dev)
 
 ## Where things stand
 
-**Start by calling `list_actionable`** — it shows the epic's goals, story
-coverage, and actionable items. Use that context to recommend what to work
-on next, rather than just presenting the raw output.
+**Start by running `uv run primer-mcp list-actionable`**, then:
 
-Done: ST-001 to ST-006 (scaffolding, models, `init_project`, planning tools,
-execution tools, completion tools), ST-007 (query and graph tools), ST-015
-(tolerant schema + version stamp). All 14 tools are registered and reachable
-over MCP; 188 tests, mypy strict and ruff clean.
-
-Open: ST-008 `export_graph`, ST-009 MCP Prompts, ST-010 test sweep, ST-011
-README and publish, ST-012 CI, ST-013 portfolio framing, ST-014 `reopen_task`,
-ST-016 `adr_ids` on stories.
-
-Two things waiting to be picked up, neither urgent:
-
-- **ST-016 was deliberately parked** until `update_ticket` existed. It does
-  now, so `adr_ids` can ship settable and amendable together, with the
-  fourteen existing stories backfilled in one pass.
-- **ST-011's review pass has a known target**: `verify_task`'s tool
-  description still asks for test output, which contradicts the
-  evidence-points-at-the-commit rule below. Tool descriptions are the model's
-  steering surface, so the rule does not take effect until they are rewritten.
+1. Copy the command's entire output into your response as-is. The output
+   is already formatted for the user — do not rewrite, summarise, or
+   build your own table from it.
+2. Below that output, add your recommendation for what to work on next
+   and why.
 
 The live backlog is `primer/`; `docs/epic-001.md` keeps the prose descriptions.
 Story IDs match across both — ST-007 means the query and graph tools story
-everywhere. ST-001 through ST-006 were back-filled during migration with one
-summary task each, carrying their real merge commits as verification evidence.
+everywhere.
 
 Decisions live in `primer/adrs/` (ADR-001 to ADR-007) with the alternatives
 that were rejected. Read those before reopening a settled question — several
@@ -101,7 +85,7 @@ and guide the workflow. Hand-edit where the tools fall short.
 - Plan before code. The recommended flow is Epic → ADR → Story → Task,
   but the tools suggest rather than enforce — skip steps when it makes
   sense for the work at hand.
-- Unsure what to do next? Call `list_actionable`.
+- Unsure what to do next? Run `uv run primer-mcp list-actionable`.
 - Completion is two-phase: `complete_task` with notes, then `verify_task`
   with evidence (point at the commit, not the output). Both are
   recommended — the tools will nudge you if you skip a step.

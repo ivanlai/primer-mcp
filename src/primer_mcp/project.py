@@ -17,6 +17,8 @@ from primer_mcp.models import SCHEMA_VERSION
 
 PRIMER_DIR = "primer"
 
+CONVENTION_FILES = ["CLAUDE.md", "AGENTS.md"]
+
 # Where each ticket type lives under primer/. Single source of truth for the
 # store layout: SUBDIRS below and every path lookup derive from it.
 SUBDIR_FOR_TYPE = {
@@ -52,7 +54,7 @@ def require_store(project_dir: Path) -> Path:
 # Idempotency marker: if this heading exists in a convention file, we skip it.
 SNIPPET_HEADING = "## primer-mcp"
 
-CLAUDE_MD_SNIPPET = f"""{SNIPPET_HEADING}
+WORKFLOW_SNIPPET = f"""{SNIPPET_HEADING}
 
 This project uses primer-mcp for planning-first development. Tickets are
 markdown files under `primer/` — they are yours to read and edit. Prefer the
@@ -118,22 +120,18 @@ def init_project(
         config_path.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
         lines.append(f"Created {PRIMER_DIR}/config.yaml (project_name: {project_name})")
 
-    for convention_file in ("CLAUDE.md", "AGENTS.md"):
+    for convention_file in CONVENTION_FILES:
         path = project_dir / convention_file
         if not path.exists():
-            if convention_file == "CLAUDE.md":
-                path.write_text(CLAUDE_MD_SNIPPET, encoding="utf-8")
-                lines.append("Created CLAUDE.md with the primer-mcp workflow section")
-            continue
-        existing = path.read_text(encoding="utf-8")
-        if SNIPPET_HEADING in existing:
-            if convention_file == "CLAUDE.md":
-                lines.append("CLAUDE.md already has the primer-mcp section — left untouched")
-            continue
-        separator = "" if existing.endswith("\n\n") else "\n" if existing.endswith("\n") else "\n\n"
-        path.write_text(existing + separator + CLAUDE_MD_SNIPPET, encoding="utf-8")
-        if convention_file == "CLAUDE.md":
-            lines.append("Appended the primer-mcp workflow section to existing CLAUDE.md")
+            path.write_text(WORKFLOW_SNIPPET, encoding="utf-8")
+            lines.append(f"Created {convention_file} with the primer-mcp workflow section")
+        elif SNIPPET_HEADING in path.read_text(encoding="utf-8"):
+            lines.append(f"{convention_file} already has the primer-mcp section — left untouched")
+        else:
+            existing = path.read_text(encoding="utf-8")
+            separator = "" if existing.endswith("\n\n") else "\n" if existing.endswith("\n") else "\n\n"
+            path.write_text(existing + separator + WORKFLOW_SNIPPET, encoding="utf-8")
+            lines.append(f"Appended the primer-mcp workflow section to existing {convention_file}")
 
     lines.append("Project initialised. Next step: create an epic with plan_epic.")
     return lines

@@ -87,9 +87,11 @@ class TestClaudeMd:
 
 
 class TestAgentsMd:
-    def test_not_created_when_missing(self, tmp_path: Path) -> None:
+    def test_created_when_missing(self, tmp_path: Path) -> None:
         init_project(tmp_path, "demo")
-        assert not (tmp_path / "AGENTS.md").exists()
+        content = (tmp_path / "AGENTS.md").read_text()
+        assert content.startswith(SNIPPET_HEADING)
+        assert "list_actionable" in content
 
     def test_appended_when_exists(self, tmp_path: Path) -> None:
         existing = "# Codex rules\n\nBe concise.\n"

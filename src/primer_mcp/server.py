@@ -198,9 +198,12 @@ def create_server(project_dir: Path) -> MCPServer:
     @server.tool(name="complete_task")
     def complete_task(task_id: str, notes: str) -> str:
         """
-        Mark a task as completed with notes on what was done. Ideally call
-        start_task first, but this works from any status. After this, call
-        verify_task with evidence to finalise.
+        Mark a task as completed with notes on what was done. The notes
+        parameter is a terse one-liner for the frontmatter field; write a
+        fuller summary (approach, key changes, decisions) into the
+        ## Completion Notes body section of the ticket separately.
+        Ideally call start_task first, but this works from any status.
+        After this, call verify_task with evidence to finalise.
         """
 
         return _call(tickets.complete_task, project_dir, task_id, notes)

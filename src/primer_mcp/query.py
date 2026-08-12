@@ -64,18 +64,28 @@ def list_tickets(
     project_dir: Path,
     ticket_type: str | None = None,
     status: str | None = None,
+    parent_id: str | None = None,
 ) -> list[str]:
     """
-    One line per ticket, filtered by type and status.
+    One line per ticket, filtered by type, status, and/or parent.
     """
     if ticket_type is not None and ticket_type not in SUBDIR_FOR_TYPE:
         raise GateError(
             f"Unknown ticket type {ticket_type!r}. Expected one of: {', '.join(SUBDIR_FOR_TYPE)}."
         )
 
+    all_tickets = load_tickets(project_dir)
+
+    if parent_id is not None:
+        if parent_id not in all_tickets:
+            raise GateError(f"Parent ticket {parent_id!r} does not exist.")
+        pool = children_of(all_tickets, parent_id)
+    else:
+        pool = list(all_tickets.values())
+
     tickets = [
         t
-        for t in load_tickets(project_dir).values()
+        for t in pool
         if (ticket_type is None or t.type == ticket_type) and (status is None or t.status == status)
     ]
     if not tickets:

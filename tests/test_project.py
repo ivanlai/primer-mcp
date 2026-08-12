@@ -86,6 +86,26 @@ class TestClaudeMd:
         assert f"# Mine\n\n{SNIPPET_HEADING}" in content
 
 
+class TestAgentsMd:
+    def test_not_created_when_missing(self, tmp_path: Path) -> None:
+        init_project(tmp_path, "demo")
+        assert not (tmp_path / "AGENTS.md").exists()
+
+    def test_appended_when_exists(self, tmp_path: Path) -> None:
+        existing = "# Codex rules\n\nBe concise.\n"
+        (tmp_path / "AGENTS.md").write_text(existing)
+        init_project(tmp_path, "demo")
+        content = (tmp_path / "AGENTS.md").read_text()
+        assert content.startswith(existing)
+        assert SNIPPET_HEADING in content
+
+    def test_untouched_when_marker_present(self, tmp_path: Path) -> None:
+        original = f"# Codex\n\n{SNIPPET_HEADING}\n\nCustomised.\n"
+        (tmp_path / "AGENTS.md").write_text(original)
+        init_project(tmp_path, "demo")
+        assert (tmp_path / "AGENTS.md").read_text() == original
+
+
 class TestIdempotency:
     def test_running_twice_equals_running_once(self, tmp_path: Path) -> None:
         (tmp_path / "CLAUDE.md").write_text("# Existing project\n")

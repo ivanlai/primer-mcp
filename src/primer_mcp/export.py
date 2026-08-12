@@ -35,6 +35,11 @@ STATUS_BORDER = {
 }
 
 
+def _safe_json(obj: object) -> str:
+    """Serialize *obj* as JSON, escaping sequences that would break inline <script>."""
+    return json.dumps(obj).replace("</", "<\\/")
+
+
 def _parent_id(ticket: Ticket) -> str | None:
     if isinstance(ticket, Adr | Story):
         return ticket.epic_id
@@ -373,11 +378,11 @@ def export_graph(project_dir: Path, output_path: Path | None = None) -> list[str
 
     html = _HTML_TEMPLATE.format(
         vis_js=vis_js,
-        nodes_json=json.dumps(nodes),
-        edges_json=json.dumps(edges),
-        details_json=json.dumps(details),
-        type_colours_json=json.dumps(TYPE_COLOUR),
-        status_colours_json=json.dumps(STATUS_BORDER),
+        nodes_json=_safe_json(nodes),
+        edges_json=_safe_json(edges),
+        details_json=_safe_json(details),
+        type_colours_json=_safe_json(TYPE_COLOUR),
+        status_colours_json=_safe_json(STATUS_BORDER),
         legend_types=_legend_html(TYPE_COLOUR, "type"),
         legend_statuses=_legend_html(STATUS_BORDER, "status"),
     )

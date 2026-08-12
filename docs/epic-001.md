@@ -61,9 +61,9 @@ Implement story and task creation with workflow gating.
 ### ST-006: Completion tools — `complete_task`, `verify_task`, `complete_spike`
 Implement two-phase task completion and spike closure.
 - `complete_task`: sets task status to `completed`, records completion notes
-- `verify_task`: requires status `completed`; records verification evidence; sets status to `verified` (terminal)
+- `verify_task`: recommends status `completed` (nudges if skipped); records verification evidence; sets status to `verified` (terminal)
 - `complete_spike`: records findings, sets spike status to `done`
-- Acceptance: `verify_task` fails with an actionable error if the task is not `completed`; state transitions match the Ticket Lifecycle
+- Acceptance: `verify_task` nudges if the task is not `completed`; state transitions match the Ticket Lifecycle
 
 ### ST-007: Query and graph tools — `get_next_action`, `get_ticket`, `list_tickets`, `update_ticket`
 Implement project navigation and read/update tools using networkx.

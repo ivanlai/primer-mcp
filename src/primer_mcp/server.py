@@ -270,14 +270,18 @@ def create_server(project_dir: Path) -> MCPServer:
         return _call(query.get_ticket, project_dir, ticket_id)
 
     @server.tool(name="list_tickets")
-    def list_tickets(ticket_type: str | None = None, status: str | None = None) -> str:
+    def list_tickets(
+        ticket_type: str | None = None,
+        status: str | None = None,
+        parent_id: str | None = None,
+    ) -> str:
         """
         List tickets one per line, newest work last. Filter by type (epic,
-        adr, story, task, spike) or status to narrow it. Use this to find an ID
-        before calling another tool.
+        adr, story, task, spike), status, or parent_id (show only children of
+        that ticket). Use this to find an ID before calling another tool.
         """
 
-        return _call(query.list_tickets, project_dir, ticket_type, status)
+        return _call(query.list_tickets, project_dir, ticket_type, status, parent_id)
 
     @server.tool(name="update_ticket")
     def update_ticket(

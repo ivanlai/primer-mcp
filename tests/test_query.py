@@ -87,6 +87,25 @@ class TestListTickets:
         with pytest.raises(GateError, match="story"):
             list_tickets(project, ticket_type="bug")
 
+    def test_parent_id_filters_to_children(self, project: Path) -> None:
+        lines = list_tickets(project, parent_id="ST-001")
+        assert [line.split()[0] for line in lines] == ["TK-001", "TK-002"]
+
+    def test_parent_id_epic_returns_stories_not_adrs(self, project: Path) -> None:
+        lines = list_tickets(project, parent_id="EP-001")
+        ids = [line.split()[0] for line in lines]
+        assert "ST-001" in ids
+        assert "ADR-001" not in ids
+
+    def test_parent_id_combined_with_status(self, project: Path) -> None:
+        start_task(project, "TK-001")
+        lines = list_tickets(project, parent_id="ST-001", status="in-progress")
+        assert len(lines) == 1 and "TK-001" in lines[0]
+
+    def test_parent_id_not_found_raises(self, project: Path) -> None:
+        with pytest.raises(GateError, match="ST-999"):
+            list_tickets(project, parent_id="ST-999")
+
 
 class TestGetTicket:
     def test_returns_the_file_verbatim(self, project: Path) -> None:

@@ -63,7 +63,7 @@ class TestClaudeMd:
         init_project(tmp_path, "demo")
         content = (tmp_path / "CLAUDE.md").read_text()
         assert content.startswith(SNIPPET_HEADING)
-        assert "get_next_action" in content
+        assert "list_actionable" in content
 
     def test_appended_preserving_existing_content(self, tmp_path: Path) -> None:
         existing = "# My project\n\nMy own rules.\n"

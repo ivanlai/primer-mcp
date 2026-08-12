@@ -62,7 +62,7 @@ and guide the workflow. Hand-edit where the tools fall short.
 - Plan before code. The recommended flow is Epic → ADR → Story → Task,
   but the tools suggest rather than enforce — skip steps when it makes
   sense for the work at hand.
-- Unsure what to do next? Call `get_next_action`.
+- Unsure what to do next? Call `list_actionable`.
 - Completion is two-phase: `complete_task` with notes, then `verify_task`
   with evidence (point at the commit, not the output). Both are
   recommended — the tools will nudge you if you skip a step.

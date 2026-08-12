@@ -235,8 +235,11 @@ def create_server(project_dir: Path) -> MCPServer:
         List what can be acted on right now, with epic context.
 
         Returns the epic's goals, story coverage, and a table of actionable
-        items. Use this output together with your understanding of the
-        project to recommend what to do next:
+        items. Always show the full table to the user first, then add your
+        recommendation below it. The table is the primary output — the user
+        needs to see all options to make their own call.
+
+        After showing the table, recommend what to do next:
 
         1. Check whether the stories cover the epic's goals. If goals are
            uncovered, recommend more planning (create_story) before
@@ -247,8 +250,6 @@ def create_server(project_dir: Path) -> MCPServer:
            (get_ticket) and recommend based on impact — what unblocks the
            most work, what aligns with current momentum, why now.
         4. If several items are genuinely equal, say so and explain why.
-
-        Never present the raw output without a recommendation.
         """
 
         return _call(query.list_actionable, project_dir)

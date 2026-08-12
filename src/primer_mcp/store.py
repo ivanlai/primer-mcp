@@ -374,7 +374,10 @@ def list_actionable(project_dir: Path) -> list[str]:
     epic = _oldest(open_epics)
     scope = _epic_scope(tickets, epic.id)
 
-    if not any(isinstance(t, Adr) and t.epic_id == epic.id for t in tickets.values()):
+    has_adrs = any(isinstance(t, Adr) and t.epic_id == epic.id for t in tickets.values())
+    stories = [t for t in scope.values() if isinstance(t, Story)]
+
+    if not has_adrs and not stories:
         return _answer(
             f"{epic.id} ({epic.title}) has no recorded decisions yet.",
             f'Consider record_adr(epic_id="{epic.id}", ...) to capture the reasoning '
@@ -382,7 +385,6 @@ def list_actionable(project_dir: Path) -> list[str]:
             "decisions are straightforward.",
         )
 
-    stories = [t for t in scope.values() if isinstance(t, Story)]
     if not stories:
         return _answer(
             f"{epic.id} has decisions recorded but no stories.",
@@ -483,5 +485,11 @@ def list_actionable(project_dir: Path) -> list[str]:
                 lines.append(f"  {ticket.id} waits on {', '.join(blockers)}")
         if lines[-1].startswith("Nothing"):
             lines.append(f"  Nothing outstanding in {epic.id}, but it is not done — check its stories.")
+
+    if not has_adrs:
+        lines.append("")
+        lines.append(
+            f"Note: {epic.id} has no ADRs — consider record_adr to capture decisions."
+        )
 
     return lines

@@ -340,10 +340,18 @@ class TestLadderRungs:
         init_project(tmp_path, "demo")
         assert "plan_epic" in next_action(tmp_path)
 
-    def test_epic_without_adr_points_at_record_adr(self, tmp_path: Path) -> None:
+    def test_epic_without_adr_or_stories_points_at_record_adr(self, tmp_path: Path) -> None:
         init_project(tmp_path, "demo")
         plan_epic(tmp_path, "Epic", why="w", goals=["g"])
         assert "record_adr" in next_action(tmp_path)
+
+    def test_epic_without_adr_but_with_stories_shows_actionable(self, tmp_path: Path) -> None:
+        init_project(tmp_path, "demo")
+        epic_id = _id(plan_epic(tmp_path, "Epic", why="w", goals=["g"]))
+        create_story(tmp_path, epic_id, "Story", what="w")
+        output = next_action(tmp_path)
+        assert "ST-001" in output
+        assert "record_adr" in output
 
     def test_epic_without_stories_points_at_create_story(self, tmp_path: Path) -> None:
         init_project(tmp_path, "demo")

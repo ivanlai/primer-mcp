@@ -215,15 +215,22 @@ def create_server(project_dir: Path) -> MCPServer:
         return _call(tickets.complete_task, project_dir, task_id, notes)
 
     @server.tool(name="verify_task")
-    def verify_task(task_id: str, evidence: str) -> str:
+    def verify_task(task_id: str, evidence: str, commit: str = "") -> str:
         """
-        Verify a task with evidence that the work holds — point at the
-        commit, not the output (e.g. "218 passed, mypy clean — c4ac39f").
-        Ideally call complete_task first to capture notes, but this works
-        from any status. Sets the task to verified.
+        Verify a task with evidence that the work holds (e.g. "218 passed,
+        mypy clean"). Pass the short commit hash in the commit parameter
+        so it is labelled consistently. Ideally call complete_task first
+        to capture notes, but this works from any status. Sets the task
+        to verified.
         """
 
-        return _call(tickets.verify_task, project_dir, task_id, evidence)
+        return _call(
+            tickets.verify_task,
+            project_dir,
+            task_id,
+            evidence,
+            commit or None,
+        )
 
     @server.tool(name="complete_spike")
     def complete_spike(spike_id: str, findings: str) -> str:

@@ -429,6 +429,7 @@ def verify_task(
     project_dir: Path,
     task_id: str,
     evidence: str,
+    commit: str | None = None,
 ) -> list[str]:
     """
     Verify a task with evidence that the work holds. Proceeds from any
@@ -453,6 +454,9 @@ def verify_task(
         )
     elif ticket.status == "verified":
         nudge = f"Note: updating verification evidence on {task_id} (was already verified)."
+
+    if commit:
+        evidence = f"{evidence} (commit {commit})"
 
     today = datetime.now(tz=UTC).date()
     updated = ticket.model_copy(

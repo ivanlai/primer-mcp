@@ -643,6 +643,17 @@ class TestVerifyTask:
         reloaded, _ = loads_ticket(path.read_text())
         assert reloaded.updated == datetime.now(tz=UTC).date()
 
+    def test_commit_param_labels_hash_in_evidence(self, project: Path) -> None:
+        task_id = _make_in_progress_task(project)
+        complete_task(project, task_id, "done")
+        verify_task(project, task_id, "3 tests pass", commit="abc1234")
+        reloaded, body = loads_ticket(
+            (project / f"primer/tasks/{task_id}.md").read_text()
+        )
+        assert isinstance(reloaded, Task)
+        assert reloaded.verified_evidence == "3 tests pass (commit abc1234)"
+        assert "(commit abc1234)" in body
+
 
 class TestCompleteSpike:
     def test_transitions_todo_to_done(self, project: Path) -> None:

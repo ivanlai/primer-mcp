@@ -218,6 +218,44 @@ class TestDetailData:
         assert "Body" in details["EP-001"]["body"]
 
 
+class TestScriptEscaping:
+    def test_script_closing_tag_in_body_is_escaped(self, tmp_path: Path) -> None:
+        """A ticket body containing </script> must not break the HTML."""
+        init_project(tmp_path, "demo")
+        write(
+            tmp_path,
+            Epic(id="EP-001", title="Epic", created=TODAY, updated=TODAY),
+        )
+        write(
+            tmp_path,
+            Story(
+                id="ST-001", title="Story", created=TODAY, updated=TODAY, epic_id="EP-001"
+            ),
+        )
+        write(
+            tmp_path,
+            Task(
+                id="TK-001",
+                title="Task with script tag",
+                created=TODAY,
+                updated=TODAY,
+                story_id="ST-001",
+                testable_outcome="it works",
+            ),
+            body="## Body\nsome html </script><h1>injected</h1>",
+        )
+        export_graph(tmp_path)
+        html = (tmp_path / "primer" / "graph.html").read_text()
+
+        # The only raw </script> tags should be the template's own closing tags.
+        # Count them: the template has exactly 2 (vis.js script + app script).
+        raw_count = html.count("</script>")
+        assert raw_count == 2, f"Expected 2 template </script> tags, found {raw_count}"
+
+        # The escaped form must appear in the embedded JSON.
+        assert r"<\/script>" in html
+
+
 class TestEmptyStore:
     def test_no_tickets(self, tmp_path: Path) -> None:
         init_project(tmp_path, "empty")

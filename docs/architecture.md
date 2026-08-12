@@ -96,7 +96,7 @@ Any type may be `blocked` at any pre-terminal point. Terminal states per type:
 
 - **Epic / Story:** `todo → in-progress → done`. `done` is derived, never set directly: a story is done when all child tasks are `verified` and all child spikes are `done`; an epic is done when all child stories are done. Derived status is *written to the file* by the tools that change a child, in both directions — finishing the last child settles its parents, adding a new one reopens them (ADR-002). Read tools therefore report stored status and derive nothing. Done requires at least one child, so a childless story is never vacuously done.
 - **ADR:** created as `done` — an ADR records a decision already made. It has no active lifecycle.
-- **Task:** `todo → in-progress → completed → verified`. `complete_task` sets `completed`; `verify_task` requires status `completed` and sets `verified` (terminal). The intermediate `completed` state is what makes the two-phase gate checkable from state alone.
+- **Task:** `todo → in-progress → completed → verified`. `complete_task` sets `completed`; `verify_task` recommends status `completed` (nudging if skipped) and sets `verified` (terminal). The intermediate `completed` state is what makes the two-phase flow trackable from state alone.
 - **Spike:** `todo → done`. `complete_spike` records findings and sets `done`. There is no `start_spike`, so `in-progress` is unreachable for spikes, and an open spike does not gate the tasks beside it — use `blocked_by` where one genuinely must come first (ADR-006).
 
 `status: blocked` and `blocked_by` are separate mechanisms and `blocked` is never derived (ADR-003). A ticket waiting on another ticket keeps `status: todo` and is simply not offered; readiness is computed from the graph on every call. `blocked` is reserved for blockers with no ticket — waiting on credentials, on a review — which the graph cannot express.
@@ -235,10 +235,10 @@ Hard gates — the server rejects the call with a steering error:
 
 1. Cannot call `record_adr` without a valid `epic_id`
 2. Cannot call `create_task` without a valid `story_id`
-3. Cannot call `verify_task` unless `complete_task` has been called first (task status must be `completed`)
 
 Nudges — the call succeeds, with a suggestion appended:
 
+- `verify_task` before `complete_task`: verification proceeds, with a nudge recommending the two-phase flow
 - `create_story` without an ADR on the epic: story is created, tip suggests `record_adr`
 - `get_next_action` on an epic with no ADRs: suggests recording decisions or creating stories directly
 

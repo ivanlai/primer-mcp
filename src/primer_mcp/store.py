@@ -343,7 +343,7 @@ def list_actionable(project_dir: Path) -> list[str]:
         return _answer(
             "No ticket store here yet — nothing is being tracked.",
             'init_project(project_name="...") creates primer/ and adds the workflow '
-            "section to CLAUDE.md.",
+            "section to CLAUDE.md (and AGENTS.md if it exists).",
         )
 
     graph = dependency_graph(tickets)

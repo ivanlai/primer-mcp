@@ -1,9 +1,9 @@
 """
-Project initialisation: the primer/ data store and CLAUDE.md setup.
+Project initialisation: the primer/ data store and convention-file setup.
 
 Everything here is idempotent — running init_project twice produces
 byte-identical state to running it once, and user-owned files
-(config.yaml, CLAUDE.md) are never overwritten or rewritten.
+(config.yaml, CLAUDE.md, AGENTS.md) are never overwritten or rewritten.
 """
 
 from __future__ import annotations
@@ -49,7 +49,7 @@ def require_store(project_dir: Path) -> Path:
     return primer
 
 
-# Idempotency marker: if this heading exists in CLAUDE.md, we never touch the file.
+# Idempotency marker: if this heading exists in a convention file, we skip it.
 SNIPPET_HEADING = "## primer-mcp"
 
 CLAUDE_MD_SNIPPET = f"""{SNIPPET_HEADING}

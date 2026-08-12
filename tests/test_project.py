@@ -1,5 +1,5 @@
 """
-init_project tests: layout, config, CLAUDE.md handling, idempotency.
+init_project tests: layout, config, convention-file handling, idempotency.
 """
 
 from pathlib import Path

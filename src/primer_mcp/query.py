@@ -219,6 +219,61 @@ def update_ticket(
     ]
 
 
+def delete_ticket(project_dir: Path, ticket_id: str) -> list[str]:
+    """
+    Delete a ticket file. Warns if non-todo or if it has children.
+    """
+    path = find_path(project_dir, ticket_id)
+    ticket, _ = loads_ticket(path.read_text(encoding="utf-8"))
+
+    path.unlink()
+
+    lines = [f"Deleted {ticket_id}: {ticket.title}"]
+
+    if ticket.status != "todo":
+        lines.append(f"Note: {ticket_id} was {ticket.status!r}.")
+
+    all_tickets = load_tickets(project_dir)
+    kids = children_of(all_tickets, ticket_id)
+    if isinstance(ticket, Epic):
+        kids += sorted(
+            (t for t in all_tickets.values() if isinstance(t, Adr) and t.epic_id == ticket_id),
+            key=lambda t: sort_key(t.id),
+        )
+    if kids:
+        kid_ids = ", ".join(k.id for k in kids)
+        lines.append(
+            f"Note: {ticket_id} had children: {kid_ids}. "
+            "Call delete_ticket on each to clean up."
+        )
+
+    return lines
+
+
+def sweep_blocked_by(project_dir: Path) -> list[str]:
+    """
+    Remove blocked_by entries that point to tickets that no longer exist.
+    """
+    all_tickets = load_tickets(project_dir)
+    existing_ids = set(all_tickets)
+    cleaned: list[str] = []
+
+    for ticket in all_tickets.values():
+        dangling = [ref for ref in ticket.blocked_by if ref not in existing_ids]
+        if not dangling:
+            continue
+        new_blocked_by = [ref for ref in ticket.blocked_by if ref in existing_ids]
+        path = find_path(project_dir, ticket.id)
+        _, body = loads_ticket(path.read_text(encoding="utf-8"))
+        updated = ticket.model_copy(update={"blocked_by": new_blocked_by})
+        path.write_text(dumps_ticket(updated, body), encoding="utf-8")
+        cleaned.append(f"  {ticket.id}: removed {', '.join(dangling)}")
+
+    if not cleaned:
+        return ["No dangling references found."]
+    return ["Cleaned blocked_by references:", *cleaned]
+
+
 def _epic_scope(tickets: dict[str, Ticket], epic_id: str) -> dict[str, Ticket]:
     # Everything belonging to one epic: its stories, and their tasks and spikes.
     stories = {t.id for t in tickets.values() if isinstance(t, Story) and t.epic_id == epic_id}

@@ -10,7 +10,14 @@ import pytest
 from primer_mcp.errors import GateError
 from primer_mcp.graph import find_path
 from primer_mcp.project import init_project
-from primer_mcp.query import get_ticket, list_actionable, list_tickets, update_ticket
+from primer_mcp.query import (
+    delete_ticket,
+    get_ticket,
+    list_actionable,
+    list_tickets,
+    sweep_blocked_by,
+    update_ticket,
+)
 from primer_mcp.storage import dumps_ticket, loads_ticket
 from primer_mcp.tickets import (
     complete_spike,
@@ -255,6 +262,55 @@ class TestUpdateBodyAndRefs:
         update_ticket(project, "TK-001", status="blocked")
         after, _ = loads_ticket(path.read_text())
         assert after.updated == datetime.now(tz=UTC).date()
+
+
+class TestDeleteTicket:
+    def test_deletes_a_todo_task(self, project: Path) -> None:
+        path = find_path(project, "TK-001")
+        result = delete_ticket(project, "TK-001")
+        assert "Deleted TK-001" in result[0]
+        assert not path.exists()
+
+    def test_non_todo_warns_but_proceeds(self, project: Path) -> None:
+        start_task(project, "TK-001")
+        path = find_path(project, "TK-001")
+        result = delete_ticket(project, "TK-001")
+        assert not path.exists()
+        assert any("in-progress" in line for line in result)
+
+    def test_not_found_raises(self, project: Path) -> None:
+        with pytest.raises(GateError, match="TK-404"):
+            delete_ticket(project, "TK-404")
+
+    def test_warns_about_children(self, project: Path) -> None:
+        path = find_path(project, "ST-001")
+        result = delete_ticket(project, "ST-001")
+        assert not path.exists()
+        assert any("TK-001" in line and "TK-002" in line for line in result)
+
+    def test_warns_about_adr_children_of_epic(self, project: Path) -> None:
+        result = delete_ticket(project, "EP-001")
+        assert any("ADR-001" in line for line in result)
+
+    def test_file_untouched_on_rejection(self, project: Path) -> None:
+        before = find_path(project, "TK-404" if False else "TK-001").read_bytes()
+        with pytest.raises(GateError):
+            delete_ticket(project, "TK-404")
+        assert find_path(project, "TK-001").read_bytes() == before
+
+
+class TestSweepBlockedBy:
+    def test_cleans_dangling_refs(self, project: Path) -> None:
+        update_ticket(project, "TK-002", blocked_by=["TK-001"])
+        delete_ticket(project, "TK-001")
+        result = sweep_blocked_by(project)
+        assert any("TK-002" in line for line in result)
+        ticket, _ = loads_ticket(find_path(project, "TK-002").read_text())
+        assert ticket.blocked_by == []
+
+    def test_noop_when_nothing_dangling(self, project: Path) -> None:
+        result = sweep_blocked_by(project)
+        assert any("No dangling" in line for line in result)
 
 
 def force_edge(project: Path, ticket_id: str, blocked_by: list[str]) -> None:

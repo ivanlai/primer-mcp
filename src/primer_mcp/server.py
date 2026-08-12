@@ -311,6 +311,27 @@ def create_server(project_dir: Path) -> MCPServer:
             external_ref,
         )
 
+    @server.tool(name="delete_ticket")
+    def delete_ticket(ticket_id: str) -> str:
+        """
+        Delete a ticket. Non-todo tickets are deleted with a warning.
+        Children are reported but not deleted — call delete_ticket on
+        each to cascade. After all deletions, call sweep_blocked_by to
+        clean up dangling references. Recoverable from git history.
+        """
+
+        return _call(query.delete_ticket, project_dir, ticket_id)
+
+    @server.tool(name="sweep_blocked_by")
+    def sweep_blocked_by() -> str:
+        """
+        Remove blocked_by references that point to tickets that no
+        longer exist. Call once after finishing a batch of delete_ticket
+        calls.
+        """
+
+        return _call(query.sweep_blocked_by, project_dir)
+
     @server.tool(name="export_graph")
     def export_graph(output_path: str | None = None) -> str:
         """

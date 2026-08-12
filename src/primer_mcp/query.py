@@ -249,31 +249,31 @@ def _answer(situation: str, next_call: str) -> list[str]:
     return [situation, f"Next: {next_call}"]
 
 
-def get_next_action(project_dir: Path) -> list[str]:
+def _options_table(
+    situation: str,
+    headers: Sequence[str],
+    rows: Sequence[Sequence[str]],
+) -> list[str]:
+    lines = [situation, ""]
+    lines.append("| " + " | ".join(headers) + " |")
+    lines.append("|" + "|".join("---" for _ in headers) + "|")
+    for row in rows:
+        lines.append("| " + " | ".join(row) + " |")
+    return lines
+
+
+def list_actionable(project_dir: Path) -> list[str]:
     """
-    Answer "what should I do next?" with exactly one instruction.
+    Return everything that can be acted on right now, with epic context.
 
-    Checks run in a fixed order and the first match returns, so the answer is
-    deterministic rather than a list of options:
+    Output has two sections:
+    1. Epic context — goals, story coverage, and progress summary so the
+       reader can judge whether more planning is needed before execution.
+    2. Actionable items — a table of tickets that are ready to work on,
+       after filtering out blocked, done, and dependency-gated items.
 
-        1. no store                 -> init_project
-           dependency cycle         -> report the loop (also: the sort below
-                                       cannot run on a cyclic graph)
-        2. no epics                 -> plan_epic
-           every epic done          -> nothing outstanding
-           -- from here, only the oldest open epic is considered --
-        3. no ADR                   -> record_adr
-        4. a task is completed      -> verify_task      | task state before
-        5. a task is in progress    -> complete_task    | creating anything
-        6. no stories               -> create_story
-        7. a story with no tasks    -> create_task      | plan before picking
-        8. a ready task or spike    -> start_task / complete_spike
-        9. nothing ready            -> name what is in the way
-
-    Two of those orderings were decisions rather than accidents (ADR-001):
-    4 and 5 above 6, because a half-open two-phase gate is the dangling state
-    the workflow exists to prevent; and 7 above 8, because an unplanned story
-    should be broken down before the agent picks up work under a newer story.
+    Early gates (no store, cycles, missing epics) short-circuit with a
+    single instruction since the list cannot be built yet.
     """
     try:
         tickets = load_tickets(project_dir)
@@ -320,25 +320,6 @@ def get_next_action(project_dir: Path) -> list[str]:
             "decisions are straightforward.",
         )
 
-    # Task-state gates first: a half-open two-phase gate is the dangling state
-    # the workflow exists to prevent.
-    completed = [t for t in scope.values() if isinstance(t, Task) and t.status == "completed"]
-    if completed:
-        task = _oldest(completed)
-        return _answer(
-            f"{task.id} ({task.title}) is completed but not verified.",
-            f'verify_task(task_id="{task.id}", evidence="...") closes the two-phase '
-            "gate. Point at the commit rather than restating it.",
-        )
-
-    started = [t for t in scope.values() if isinstance(t, Task) and t.status == "in-progress"]
-    if started:
-        task = _oldest(started)
-        return _answer(
-            f"{task.id} ({task.title}) is in progress.",
-            f'complete_task(task_id="{task.id}", notes="...") when the work is done.',
-        )
-
     stories = [t for t in scope.values() if isinstance(t, Story)]
     if not stories:
         return _answer(
@@ -346,18 +327,56 @@ def get_next_action(project_dir: Path) -> list[str]:
             f'create_story(epic_id="{epic.id}", ...) — a deliverable with acceptance criteria.',
         )
 
-    # Unplanned stories before ready tasks: a story with no tasks should be
-    # broken down before the agent picks up work under a newer story.
-    childless = [s for s in stories if s.status == "todo" and not children_of(tickets, s.id)]
-    if childless:
-        story = _oldest(childless)
-        return _answer(
-            f"{story.id} ({story.title}) has no tasks yet.",
-            f'create_task(story_id="{story.id}", ...) — small enough for one session, '
-            "with a testable outcome.",
-        )
+    # --- Epic context: goals, story coverage, progress ---
+    assert isinstance(epic, Epic)
+    lines: list[str] = []
+    lines.append(f"## {epic.id}: {epic.title}")
+    lines.append("")
+    lines.append("**Goals:**")
+    for g in epic.goals:
+        lines.append(f"  - {g}")
+    lines.append("")
 
-    # Ready work before planning more of it.
+    done_stories = [s for s in stories if s.status == "done"]
+    open_stories = [s for s in stories if s.status != "done"]
+    lines.append(f"**Stories:** {len(done_stories)} done, {len(open_stories)} open")
+    for s in sorted(stories, key=lambda t: sort_key(t.id)):
+        mark = "x" if s.status == "done" else " "
+        lines.append(f"  - [{mark}] {s.id} {s.title}")
+    lines.append("")
+
+    # --- Urgent gates ---
+    completed = sorted(
+        (t for t in scope.values() if isinstance(t, Task) and t.status == "completed"),
+        key=lambda t: sort_key(t.id),
+    )
+    if completed:
+        lines.append(f"**Urgent:** {len(completed)} task(s) completed but not verified")
+        for t in completed:
+            lines.append(f"  - {t.id} ({t.title})")
+        lines.append("")
+
+    started = sorted(
+        (t for t in scope.values() if isinstance(t, Task) and t.status == "in-progress"),
+        key=lambda t: sort_key(t.id),
+    )
+    if started:
+        lines.append(f"**In progress:** {len(started)} task(s)")
+        for t in started:
+            lines.append(f"  - {t.id} ({t.title})")
+        lines.append("")
+
+    # --- Actionable items table ---
+    options: list[list[str]] = []
+
+    childless = sorted(
+        (s for s in stories if s.status == "todo" and not children_of(tickets, s.id)),
+        key=lambda s: sort_key(s.id),
+    )
+    for s in childless:
+        summary = s.acceptance_criteria[0] if s.acceptance_criteria else "needs tasks"
+        options.append([s.id, "—", s.title, summary])
+
     for ticket_id in nx.lexicographical_topological_sort(graph, key=sort_key):
         ticket = scope.get(ticket_id)
         if (
@@ -368,27 +387,39 @@ def get_next_action(project_dir: Path) -> list[str]:
         ):
             continue
         if isinstance(ticket, Spike):
-            return _answer(
-                f"{ticket.id} ({ticket.title}) is the next open question. "
-                f"Timebox: {ticket.timebox}.",
-                f'complete_spike(spike_id="{ticket.id}", findings="...") once you can answer it.',
-            )
-        return _answer(
-            f"{ticket.id} ({ticket.title}) is ready.",
-            f'start_task(task_id="{ticket.id}") when you begin.',
-        )
+            options.append([
+                ticket.story_id,
+                ticket.id,
+                ticket.title,
+                f"{ticket.question} (timebox: {ticket.timebox})",
+            ])
+        else:
+            assert isinstance(ticket, Task)
+            options.append([
+                ticket.story_id,
+                ticket.id,
+                ticket.title,
+                ticket.testable_outcome,
+            ])
 
-    # Nothing is ready, so say what is in the way rather than going quiet.
-    lines = ["Nothing is ready to start. What is in the way:"]
-    for ticket in _ordered(list(scope.values())):
-        if _is_terminal(ticket):
-            continue
-        if ticket.status == "blocked":
-            lines.append(f"  {ticket.id} is blocked — see the ticket for why.")
-            continue
-        blockers = _unfinished_blockers(tickets, graph, ticket.id)
-        if blockers:
-            lines.append(f"  {ticket.id} waits on {', '.join(blockers)}")
-    if len(lines) == 1:
-        lines.append(f"  Nothing outstanding in {epic.id}, but it is not done — check its stories.")
+    if options:
+        lines += _options_table(
+            f"**Actionable:** {len(options)} item(s)",
+            ("Story", "Item", "Title", "Summary"),
+            options,
+        )
+    else:
+        lines.append("Nothing is ready to start. What is in the way:")
+        for ticket in _ordered(list(scope.values())):
+            if _is_terminal(ticket):
+                continue
+            if ticket.status == "blocked":
+                lines.append(f"  {ticket.id} is blocked — see the ticket for why.")
+                continue
+            blockers = _unfinished_blockers(tickets, graph, ticket.id)
+            if blockers:
+                lines.append(f"  {ticket.id} waits on {', '.join(blockers)}")
+        if lines[-1].startswith("Nothing"):
+            lines.append(f"  Nothing outstanding in {epic.id}, but it is not done — check its stories.")
+
     return lines

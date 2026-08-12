@@ -229,16 +229,29 @@ def create_server(project_dir: Path) -> MCPServer:
 
         return _call(tickets.complete_spike, project_dir, spike_id, findings)
 
-    @server.tool(name="get_next_action")
-    def get_next_action() -> str:
+    @server.tool(name="list_actionable")
+    def list_actionable() -> str:
         """
-        Ask what to do next. Returns exactly one suggestion: the most
-        useful next step based on the current state. Call this whenever you
-        are unsure where to start, after finishing anything, or when picking a
-        project back up.
+        List what can be acted on right now, with epic context.
+
+        Returns the epic's goals, story coverage, and a table of actionable
+        items. Use this output together with your understanding of the
+        project to recommend what to do next:
+
+        1. Check whether the stories cover the epic's goals. If goals are
+           uncovered, recommend more planning (create_story) before
+           execution.
+        2. Urgent items (unverified or in-progress tasks) should usually
+           be finished before starting new work.
+        3. For the remaining items, read the tickets that look relevant
+           (get_ticket) and recommend based on impact — what unblocks the
+           most work, what aligns with current momentum, why now.
+        4. If several items are genuinely equal, say so and explain why.
+
+        Never present the raw output without a recommendation.
         """
 
-        return _call(query.get_next_action, project_dir)
+        return _call(query.list_actionable, project_dir)
 
     @server.tool(name="get_ticket")
     def get_ticket(ticket_id: str) -> str:

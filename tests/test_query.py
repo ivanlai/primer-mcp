@@ -2,6 +2,7 @@
 Read and update tools: listing, retrieval, and the gates on update_ticket.
 """
 
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -9,7 +10,7 @@ import pytest
 from primer_mcp.errors import GateError
 from primer_mcp.graph import find_path
 from primer_mcp.project import init_project
-from primer_mcp.query import get_next_action, get_ticket, list_tickets, update_ticket
+from primer_mcp.query import get_ticket, list_actionable, list_tickets, update_ticket
 from primer_mcp.storage import dumps_ticket, loads_ticket
 from primer_mcp.tickets import (
     complete_spike,
@@ -228,10 +229,13 @@ class TestUpdateBodyAndRefs:
             update_ticket(project, "TK-001")
 
     def test_updated_date_is_bumped(self, project: Path) -> None:
-        before, _ = loads_ticket(find_path(project, "TK-001").read_text())
+        path = find_path(project, "TK-001")
+        ticket, body = loads_ticket(path.read_text())
+        yesterday = datetime.now(tz=UTC).date() - timedelta(days=1)
+        path.write_text(dumps_ticket(ticket.model_copy(update={"updated": yesterday}), body))
         update_ticket(project, "TK-001", status="blocked")
-        after, _ = loads_ticket(find_path(project, "TK-001").read_text())
-        assert after.updated >= before.updated
+        after, _ = loads_ticket(path.read_text())
+        assert after.updated == datetime.now(tz=UTC).date()
 
 
 def force_edge(project: Path, ticket_id: str, blocked_by: list[str]) -> None:
@@ -245,7 +249,7 @@ def force_edge(project: Path, ticket_id: str, blocked_by: list[str]) -> None:
 
 
 def next_action(project: Path) -> str:
-    return "\n".join(get_next_action(project))
+    return "\n".join(list_actionable(project))
 
 
 class TestLadderRungs:
@@ -280,18 +284,20 @@ class TestLadderRungs:
         )
         assert "create_story" in next_action(tmp_path)
 
-    def test_ready_task_points_at_start_task(self, project: Path) -> None:
-        assert "start_task" in next_action(project)
-        assert "TK-001" in next_action(project)
+    def test_ready_task_surfaces_ticket(self, project: Path) -> None:
+        answer = next_action(project)
+        assert "TK-001" in answer and "TK-002" in answer
 
-    def test_in_progress_task_points_at_complete_task(self, project: Path) -> None:
+    def test_in_progress_task_surfaces_ticket(self, project: Path) -> None:
         start_task(project, "TK-001")
-        assert "complete_task" in next_action(project)
+        answer = next_action(project)
+        assert "TK-001" in answer and "In progress" in answer
 
-    def test_completed_task_points_at_verify_task(self, project: Path) -> None:
+    def test_completed_task_surfaces_ticket(self, project: Path) -> None:
         start_task(project, "TK-001")
         complete_task(project, "TK-001", "notes")
-        assert "verify_task" in next_action(project)
+        answer = next_action(project)
+        assert "TK-001" in answer and "not verified" in answer
 
     def test_ready_spike_quotes_its_timebox(self, project: Path) -> None:
         for task in ("TK-001", "TK-002"):
@@ -301,15 +307,15 @@ class TestLadderRungs:
         story_id = _id(create_story(project, "EP-001", "Second", what="w"))
         create_spike(project, story_id, "Investigate", question="?", timebox="2 hours")
         answer = next_action(project)
-        assert "complete_spike" in answer and "2 hours" in answer
+        assert "SP-001" in answer and "2 hours" in answer
 
-    def test_childless_story_points_at_create_task(self, project: Path) -> None:
+    def test_childless_story_surfaces_story(self, project: Path) -> None:
         for task in ("TK-001", "TK-002"):
             start_task(project, task)
             complete_task(project, task, "n")
             verify_task(project, task, "e")
         create_story(project, "EP-001", "Second", what="w")
-        assert "create_task" in next_action(project)
+        assert "ST-002" in next_action(project)
 
     def test_all_done_says_nothing_outstanding(self, project: Path) -> None:
         for task in ("TK-001", "TK-002"):
@@ -330,20 +336,20 @@ class TestLadderPrecedence:
     The orderings that were real decisions rather than falling out of the code.
     """
 
-    def test_completed_task_outranks_planning_another_story(self, project: Path) -> None:
-        # A half-open two-phase gate beats creating anything new.
+    def test_completed_task_flagged_as_urgent(self, project: Path) -> None:
+        # A half-open two-phase gate is surfaced as urgent.
         start_task(project, "TK-001")
         complete_task(project, "TK-001", "notes")
         create_story(project, "EP-001", "Story with no tasks", what="w")
         answer = next_action(project)
-        assert "verify_task" in answer and "create_task" not in answer
+        assert "Urgent" in answer and "not verified" in answer
+        assert "TK-001" in answer
 
-    def test_unplanned_story_outranks_ready_task(self, project: Path) -> None:
-        # An unplanned story should be broken down before the agent picks up
-        # work under a newer story.
+    def test_unplanned_story_and_ready_tasks_both_shown(self, project: Path) -> None:
+        # Both are shown so the LLM can recommend based on context.
         create_story(project, "EP-001", "Story with no tasks", what="w")
         answer = next_action(project)
-        assert "create_task" in answer and "start_task" not in answer
+        assert "ST-002" in answer and "TK-001" in answer
 
     def test_a_second_epic_stays_invisible(self, project: Path) -> None:
         # One epic at a time: EP-002's work is unreachable until EP-001 closes.
@@ -387,3 +393,40 @@ class TestBlockerReport:
         assert "Nothing is ready" in answer
         assert "TK-001 waits on TK-002" in answer
         assert "TK-002 is blocked" in answer
+
+
+class TestOptionsTable:
+    """Multiple items at the same priority rung produce a table."""
+
+    def test_multiple_ready_tasks_shown_as_table(self, project: Path) -> None:
+        answer = next_action(project)
+        assert "Actionable:" in answer
+        assert "TK-001" in answer and "TK-002" in answer
+        assert "Story" in answer and "Item" in answer
+
+    def test_single_ready_task_shown_in_table(self, project: Path) -> None:
+        start_task(project, "TK-001")
+        complete_task(project, "TK-001", "n")
+        verify_task(project, "TK-001", "e")
+        answer = next_action(project)
+        assert "TK-002" in answer and "Actionable:" in answer
+
+    def test_multiple_completed_tasks_flagged_urgent(self, project: Path) -> None:
+        start_task(project, "TK-001")
+        complete_task(project, "TK-001", "n")
+        start_task(project, "TK-002")
+        complete_task(project, "TK-002", "n")
+        answer = next_action(project)
+        assert "Urgent:" in answer and "not verified" in answer
+        assert "TK-001" in answer and "TK-002" in answer
+
+    def test_multiple_childless_stories_shown_in_table(self, project: Path) -> None:
+        for task in ("TK-001", "TK-002"):
+            start_task(project, task)
+            complete_task(project, task, "n")
+            verify_task(project, task, "e")
+        create_story(project, "EP-001", "Second story", what="w")
+        create_story(project, "EP-001", "Third story", what="w")
+        answer = next_action(project)
+        assert "Actionable:" in answer
+        assert "ST-002" in answer and "ST-003" in answer

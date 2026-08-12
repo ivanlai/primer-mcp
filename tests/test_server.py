@@ -21,7 +21,7 @@ EXPECTED_TOOLS = {
     "complete_task",
     "verify_task",
     "complete_spike",
-    "get_next_action",
+    "list_actionable",
     "get_ticket",
     "list_tickets",
     "update_ticket",
@@ -80,7 +80,7 @@ class TestGateErrorsBecomeResponses:
     def test_uninitialised_project_steers_to_init(self, tmp_path: Path) -> None:
         async def _test() -> None:
             async with Client(create_server(tmp_path)) as client:
-                result = await client.call_tool("get_next_action", {})
+                result = await client.call_tool("list_actionable", {})
                 assert "init_project" in _text(result)
 
         anyio.run(_test)

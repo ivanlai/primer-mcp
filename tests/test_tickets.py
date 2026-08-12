@@ -2,6 +2,7 @@
 Ticket creation tests: file output, templates, ID sequencing, and workflow gates.
 """
 
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -365,16 +366,13 @@ class TestStartTask:
 
     def test_updated_date_refreshed(self, project: Path) -> None:
         task_id = self._make_task(project)
-        ticket_before, _ = loads_ticket(
-            (project / f"primer/tasks/{task_id}.md").read_text()
-        )
+        path = project / f"primer/tasks/{task_id}.md"
+        ticket, body = loads_ticket(path.read_text())
+        yesterday = datetime.now(tz=UTC).date() - timedelta(days=1)
+        path.write_text(dumps_ticket(ticket.model_copy(update={"updated": yesterday}), body))
         start_task(project, task_id)
-        ticket_after, _ = loads_ticket(
-            (project / f"primer/tasks/{task_id}.md").read_text()
-        )
-        assert isinstance(ticket_before, Task)
-        assert isinstance(ticket_after, Task)
-        assert ticket_after.updated >= ticket_before.updated
+        reloaded, _ = loads_ticket(path.read_text())
+        assert reloaded.updated == datetime.now(tz=UTC).date()
 
 
 def _make_in_progress_task(project: Path) -> str:
@@ -478,16 +476,13 @@ class TestCompleteTask:
 
     def test_updated_date_refreshed(self, project: Path) -> None:
         task_id = _make_in_progress_task(project)
-        ticket_before, _ = loads_ticket(
-            (project / f"primer/tasks/{task_id}.md").read_text()
-        )
+        path = project / f"primer/tasks/{task_id}.md"
+        ticket, body = loads_ticket(path.read_text())
+        yesterday = datetime.now(tz=UTC).date() - timedelta(days=1)
+        path.write_text(dumps_ticket(ticket.model_copy(update={"updated": yesterday}), body))
         complete_task(project, task_id, "done")
-        ticket_after, _ = loads_ticket(
-            (project / f"primer/tasks/{task_id}.md").read_text()
-        )
-        assert isinstance(ticket_before, Task)
-        assert isinstance(ticket_after, Task)
-        assert ticket_after.updated >= ticket_before.updated
+        reloaded, _ = loads_ticket(path.read_text())
+        assert reloaded.updated == datetime.now(tz=UTC).date()
 
 
 class TestVerifyTask:
@@ -574,16 +569,13 @@ class TestVerifyTask:
     def test_updated_date_refreshed(self, project: Path) -> None:
         task_id = _make_in_progress_task(project)
         complete_task(project, task_id, "done")
-        ticket_before, _ = loads_ticket(
-            (project / f"primer/tasks/{task_id}.md").read_text()
-        )
+        path = project / f"primer/tasks/{task_id}.md"
+        ticket, body = loads_ticket(path.read_text())
+        yesterday = datetime.now(tz=UTC).date() - timedelta(days=1)
+        path.write_text(dumps_ticket(ticket.model_copy(update={"updated": yesterday}), body))
         verify_task(project, task_id, "proof")
-        ticket_after, _ = loads_ticket(
-            (project / f"primer/tasks/{task_id}.md").read_text()
-        )
-        assert isinstance(ticket_before, Task)
-        assert isinstance(ticket_after, Task)
-        assert ticket_after.updated >= ticket_before.updated
+        reloaded, _ = loads_ticket(path.read_text())
+        assert reloaded.updated == datetime.now(tz=UTC).date()
 
 
 class TestCompleteSpike:
@@ -654,16 +646,13 @@ class TestCompleteSpike:
 
     def test_updated_date_refreshed(self, project: Path) -> None:
         spike_id = _make_spike(project)
-        ticket_before, _ = loads_ticket(
-            (project / f"primer/spikes/{spike_id}.md").read_text()
-        )
+        path = project / f"primer/spikes/{spike_id}.md"
+        ticket, body = loads_ticket(path.read_text())
+        yesterday = datetime.now(tz=UTC).date() - timedelta(days=1)
+        path.write_text(dumps_ticket(ticket.model_copy(update={"updated": yesterday}), body))
         complete_spike(project, spike_id, "findings")
-        ticket_after, _ = loads_ticket(
-            (project / f"primer/spikes/{spike_id}.md").read_text()
-        )
-        assert isinstance(ticket_before, Spike)
-        assert isinstance(ticket_after, Spike)
-        assert ticket_after.updated >= ticket_before.updated
+        reloaded, _ = loads_ticket(path.read_text())
+        assert reloaded.updated == datetime.now(tz=UTC).date()
 
 
 def status_of(project: Path, ticket_id: str) -> str:

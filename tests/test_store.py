@@ -147,9 +147,10 @@ class TestUpdateStatus:
         with pytest.raises(GateError, match="complete_task"):
             update_ticket(project, "TK-001", status="completed")
 
-    def test_done_on_a_story_explains_it_is_derived(self, project: Path) -> None:
-        with pytest.raises(GateError, match="derived"):
-            update_ticket(project, "ST-001", status="done")
+    def test_done_on_a_story_is_allowed(self, project: Path) -> None:
+        update_ticket(project, "ST-001", status="done")
+        ticket, _ = loads_ticket(find_path(project, "ST-001").read_text())
+        assert ticket.status == "done"
 
     def test_adr_has_no_lifecycle(self, project: Path) -> None:
         with pytest.raises(GateError, match="no lifecycle"):
@@ -547,6 +548,16 @@ class TestStatusDrift:
     def test_consistent_store_no_drift(self, project: Path) -> None:
         answer = next_action(project)
         assert "Status drift" not in answer
+
+    def test_drift_suggested_update_ticket_succeeds(self, project: Path) -> None:
+        for task in ("TK-001", "TK-002"):
+            start_task(project, task)
+            complete_task(project, task, "n")
+            verify_task(project, task, "e")
+        force_status(project, "ST-001", "todo")
+        update_ticket(project, "ST-001", status="done")
+        ticket, _ = loads_ticket(find_path(project, "ST-001").read_text())
+        assert ticket.status == "done"
 
 
 class TestOptionsTable:

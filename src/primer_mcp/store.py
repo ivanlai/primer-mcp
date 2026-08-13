@@ -27,9 +27,7 @@ from primer_mcp.storage import dumps_ticket, loads_ticket
 from primer_mcp.tickets import _update_section
 
 # Statuses update_ticket may set. The terminal ones are reached through the
-# tools that record why — complete_task, verify_task, complete_spike — or
-# derived from children, never asserted here.
-SETTABLE_STATUS = ("todo", "in-progress", "blocked")
+SETTABLE_STATUS = ("todo", "in-progress", "blocked", "done")
 
 _TYPE_ORDER = {ticket_type: i for i, ticket_type in enumerate(SUBDIR_FOR_TYPE)}
 
@@ -100,9 +98,6 @@ def _check_status(ticket: Ticket, status: str) -> str | None:
             "what was done, which is what makes completion mean anything.",
             "verified": f'verify_task(task_id="{ticket.id}", evidence="...") is the '
             "second half of the two-phase gate.",
-            "done": f'complete_spike(spike_id="{ticket.id}", findings="...") for a '
-            "spike. For a story or epic, done is derived from its children — "
-            "finish them and it follows.",
         }.get(status)
         if remedy is None:
             raise GateError(

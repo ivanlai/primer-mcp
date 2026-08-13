@@ -162,6 +162,12 @@ body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans
 #sidebar .edge-list {{ font-size: 13px; }}
 #sidebar .edge-list span {{ cursor: pointer; color: #4A90D9; }}
 #sidebar .edge-list span:hover {{ text-decoration: underline; }}
+#sidebar .focus-btn {{ display: inline-block; margin-top: 8px; padding: 4px 12px;
+                       border-radius: 4px; font-size: 12px; font-weight: 600;
+                       cursor: pointer; border: 1px solid #0f3460; background: #0f3460;
+                       color: #e0e0e0; }}
+#sidebar .focus-btn:hover {{ background: #1a3a6e; }}
+#sidebar .focus-btn.active {{ background: #e94560; border-color: #e94560; color: #fff; }}
 #search {{ position: absolute; top: 16px; left: 16px; z-index: 11; }}
 #search input {{ background: rgba(22,33,62,0.92); border: 1px solid #0f3460; color: #e0e0e0;
                  padding: 8px 12px; border-radius: 6px; font-size: 14px; width: 200px;
@@ -253,12 +259,16 @@ function renderDetail(id) {{
     h += '<div class="field"><div class="label">Blocks</div><div class="value edge-list">'
       + d.blocks.map(function(b){{ return '<span onclick="go(\\''+b+'\\')">'+esc(b)+'</span>'; }}).join(", ") + '</div></div>';
   }}
+  h += '<div><span class="focus-btn' + (focusedNode === id ? ' active' : '') + '" onclick="toggleFocus(\\''+id+'\\')">Focus</span> <span style="font-size:11px;color:#888;">Show only connected nodes</span></div>';
   if (d.body) h += '<div class="body">' + esc(d.body) + '</div>';
   document.getElementById("detail").innerHTML = h;
   document.getElementById("sidebar").classList.add("open");
 }}
 
-function closeSidebar() {{ document.getElementById("sidebar").classList.remove("open"); }}
+function closeSidebar() {{
+  document.getElementById("sidebar").classList.remove("open");
+  if (focusedNode) {{ focusedNode = null; applyFilters(); }}
+}}
 
 function go(id) {{
   network.selectNodes([id]);
@@ -285,6 +295,7 @@ network.on("click", function(params) {{
 
 var hiddenTypes = {{}};
 var hiddenStatuses = {{}};
+var focusedNode = null;
 
 function toggleFilter(el) {{
   var kind = el.getAttribute("data-filter");
@@ -334,11 +345,28 @@ function pickSearch(id) {{
   go(id);
 }}
 
+function toggleFocus(id) {{
+  if (focusedNode === id) {{
+    focusedNode = null;
+  }} else {{
+    focusedNode = id;
+  }}
+  renderDetail(id);
+  applyFilters();
+}}
+
 function applyFilters() {{
+  var neighbors = null;
+  if (focusedNode) {{
+    neighbors = {{}};
+    neighbors[focusedNode] = true;
+    network.getConnectedNodes(focusedNode).forEach(function(n) {{ neighbors[n] = true; }});
+  }}
   var updates = [];
   nodeData.forEach(function(n) {{
     var d = details[n.id];
     var hide = !!hiddenTypes[d.type] || !!hiddenStatuses[d.status];
+    if (!hide && neighbors) hide = !neighbors[n.id];
     updates.push({{id: n.id, hidden: hide}});
   }});
   nodes.update(updates);

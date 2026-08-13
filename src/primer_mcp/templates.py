@@ -7,9 +7,6 @@ def _bullets(items: list[str], empty: str = "(none)") -> str:
     return "\n".join(f"- {item}" for item in items) if items else f"- {empty}"
 
 
-def _checklist(items: list[str], empty: str = "(none)") -> str:
-    return "\n".join(f"- [ ] {item}" for item in items) if items else f"- {empty}"
-
 
 def epic_body(
     why: str,
@@ -57,8 +54,8 @@ def story_body(
         f"## Parent Epic\n[[{epic_id}]]\n\n"
         f"## Governing ADRs\n{adr_links}\n\n"
         f"## What\n{what}\n\n"
-        f"## Acceptance Criteria\n{_checklist(acceptance_criteria)}\n\n"
-        f"## Definition of Done\n{_checklist(definition_of_done)}\n\n"
+        f"## Acceptance Criteria\n{_bullets(acceptance_criteria)}\n\n"
+        f"## Definition of Done\n{_bullets(definition_of_done)}\n\n"
         f"## Dependencies\n- (none)"
     )
 

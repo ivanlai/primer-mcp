@@ -84,7 +84,6 @@ def adr(id: str = "ADR-001", epic_id: str = "EP-001") -> Adr:
     )
 
 
-
 class TestSortKey:
     def test_orders_numerically_not_lexically(self) -> None:
         # Plain string sort gets both of these wrong: "TK-010" < "TK-002" is

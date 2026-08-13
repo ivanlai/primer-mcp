@@ -293,6 +293,7 @@ class TestDeleteTicket:
         result = delete_ticket(project, "EP-001")
         assert any("ADR-001" in line for line in result)
 
+
 class TestSweepBlockedBy:
     def test_cleans_dangling_refs(self, project: Path) -> None:
         update_ticket(project, "TK-002", blocked_by=["TK-001"])
@@ -406,7 +407,7 @@ class TestLadderRungs:
         create_story(project, "EP-001", "Third", what="w")
         force_edge(project, "ST-003", ["ST-002"])
         answer = next_action(project)
-        table = answer[answer.index("**Actionable:**"):]
+        table = answer[answer.index("**Actionable:**") :]
         assert "ST-002" in table
         assert "ST-003" not in table
 

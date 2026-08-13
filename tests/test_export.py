@@ -228,9 +228,7 @@ class TestScriptEscaping:
         )
         write(
             tmp_path,
-            Story(
-                id="ST-001", title="Story", created=TODAY, updated=TODAY, epic_id="EP-001"
-            ),
+            Story(id="ST-001", title="Story", created=TODAY, updated=TODAY, epic_id="EP-001"),
         )
         write(
             tmp_path,

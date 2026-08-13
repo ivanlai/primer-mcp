@@ -27,7 +27,7 @@ SCHEMA_VERSION = 1
 # patterns below and ID generation both derive from it.
 ID_PREFIX = {
     "epic": "EP",
-    "adr": "ADR",   # Architecture Decision Record (context/decision/consequences)
+    "adr": "ADR",  # Architecture Decision Record (context/decision/consequences)
     "story": "ST",
     "task": "TK",
     "spike": "SP",  # spike = timeboxed investigation (question/timebox/findings)

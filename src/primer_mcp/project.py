@@ -129,7 +129,9 @@ def init_project(
             lines.append(f"{convention_file} already has the primer-mcp section — left untouched")
         else:
             existing = path.read_text(encoding="utf-8")
-            separator = "" if existing.endswith("\n\n") else "\n" if existing.endswith("\n") else "\n\n"
+            separator = (
+                "" if existing.endswith("\n\n") else "\n" if existing.endswith("\n") else "\n\n"
+            )
             path.write_text(existing + separator + WORKFLOW_SNIPPET, encoding="utf-8")
             lines.append(f"Appended the primer-mcp workflow section to existing {convention_file}")
 

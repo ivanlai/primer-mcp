@@ -39,7 +39,7 @@ def _call(fn: Callable[..., list[str]], *args: Any) -> str:
         return "\n".join(fn(*args))
     except GateError as err:
         return str(err)
-    except Exception as err:
+    except Exception as err:  # noqa: BLE001
         return f"{type(err).__name__}: {err}"
 
 
@@ -374,7 +374,7 @@ def create_server(project_dir: Path) -> MCPServer:
         if epic_id:
             parts.append(
                 f"Start by reading the parent epic for context:"
-                f" get_ticket(ticket_id=\"{epic_id}\").\n"
+                f' get_ticket(ticket_id="{epic_id}").\n'
             )
         parts.append(
             "## Placement check\n\n"
@@ -407,8 +407,8 @@ def create_server(project_dir: Path) -> MCPServer:
     )
     def export_jira(epic_id: str | None = None) -> str:
         scope = (
-            f'Start by listing tickets under epic {epic_id}:'
-            f' list_tickets() and filter to that epic.'
+            f"Start by listing tickets under epic {epic_id}:"
+            f" list_tickets() and filter to that epic."
             if epic_id
             else "Start by listing all tickets: list_tickets()."
         )
@@ -464,11 +464,9 @@ def create_server(project_dir: Path) -> MCPServer:
     )
     def import_jira(jira_epic_key: str | None = None) -> str:
         scope = (
-            f"Start by reading the Jira epic {jira_epic_key} and its"
-            " children."
+            f"Start by reading the Jira epic {jira_epic_key} and its children."
             if jira_epic_key
-            else "Identify the Jira epic to import and read it with its"
-            " children."
+            else "Identify the Jira epic to import and read it with its children."
         )
         return (
             "Import a Jira epic and its hierarchy into primer-mcp using"

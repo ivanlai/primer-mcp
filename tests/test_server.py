@@ -278,9 +278,7 @@ class TestToolLifecycle:
                 assert not r.is_error
                 assert "in-progress" in _text(r)
 
-                r = await client.call_tool(
-                    "complete_task", {"task_id": "TK-001", "notes": "done"}
-                )
+                r = await client.call_tool("complete_task", {"task_id": "TK-001", "notes": "done"})
                 assert not r.is_error
                 assert "completed" in _text(r)
 

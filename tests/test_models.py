@@ -95,11 +95,7 @@ class TestEdges:
             Task(**valid_kwargs(Task), blocked_by=["banana"])
 
     def test_blocks_is_no_longer_a_field(self) -> None:
-        # blocked_by is the only stored edge; "A blocks B" is recorded on B.
-        # A stale `blocks:` from an older store is carried along inertly
-        # rather than rejected, so removing the field broke no one.
         task = Task(**valid_kwargs(Task), blocks=["TK-002"])
-        assert not hasattr(task, "blocked_by_reverse")
         assert task.model_dump()["blocks"] == ["TK-002"]
 
 

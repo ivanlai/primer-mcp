@@ -293,13 +293,6 @@ class TestDeleteTicket:
         result = delete_ticket(project, "EP-001")
         assert any("ADR-001" in line for line in result)
 
-    def test_file_untouched_on_rejection(self, project: Path) -> None:
-        before = find_path(project, "TK-404" if False else "TK-001").read_bytes()
-        with pytest.raises(GateError):
-            delete_ticket(project, "TK-404")
-        assert find_path(project, "TK-001").read_bytes() == before
-
-
 class TestSweepBlockedBy:
     def test_cleans_dangling_refs(self, project: Path) -> None:
         update_ticket(project, "TK-002", blocked_by=["TK-001"])

@@ -116,6 +116,19 @@ def _build_graph_data(
                     }
                 )
 
+        if isinstance(ticket, Story):
+            for adr_id in ticket.adr_ids:
+                if adr_id in tickets:
+                    edges.append(
+                        {
+                            "from": adr_id,
+                            "to": ticket.id,
+                            "color": {"color": "#9B59B6"},
+                            "arrows": "to",
+                            "dashes": [5, 5],
+                        }
+                    )
+
     return nodes, edges, details
 
 
@@ -195,6 +208,7 @@ body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans
   <div style="font-weight:600;margin:8px 0 6px;">Edges</div>
   <div class="row"><span class="line" style="border-style:solid;border-color:#888;"></span> hierarchy</div>
   <div class="row"><span class="line" style="border-style:dashed;border-color:#E74C3C;"></span> dependency</div>
+  <div class="row"><span class="line" style="border-style:dotted;border-color:#9B59B6;"></span> ADR informs</div>
 </div>
 <script>
 {vis_js}

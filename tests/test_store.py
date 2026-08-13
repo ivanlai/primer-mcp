@@ -370,6 +370,7 @@ class TestLadderRungs:
         start_task(project, "TK-001")
         answer = next_action(project)
         assert "TK-001" in answer and "In progress" in answer
+        assert "complete_task" in answer
 
     def test_completed_task_surfaces_ticket(self, project: Path) -> None:
         start_task(project, "TK-001")

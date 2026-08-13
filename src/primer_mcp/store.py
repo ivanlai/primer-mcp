@@ -441,9 +441,10 @@ def list_actionable(project_dir: Path) -> list[str]:
         key=lambda t: sort_key(t.id),
     )
     if started:
-        lines.append(f"**In progress:** {len(started)} task(s)")
+        lines.append(f"**In progress:** {len(started)} task(s) — finish before starting new work")
         for item in started:
             lines.append(f"  - {item.id} ({item.title})")
+        lines.append("  Call complete_task then verify_task, and include primer/ in the commit.")
         lines.append("")
 
     # --- Actionable items table ---

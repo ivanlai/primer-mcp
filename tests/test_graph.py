@@ -306,8 +306,11 @@ class TestRecomputeParents:
         write(project, story("ST-001"))
         write(project, task("TK-001", status="verified"))
         changed = recompute_parents(project, "TK-001")
-        assert len(changed) == 2
-        assert "ST-001" in changed[0] and "EP-001" in changed[1]
+        status_lines = [l for l in changed if "is now" in l]
+        assert len(status_lines) == 2
+        assert "ST-001" in status_lines[0] and "EP-001" in status_lines[1]
+        assert any("Nudge" in l and "ST-001" in l for l in changed)
+        assert any("Nudge" in l and "EP-001" in l for l in changed)
 
     def test_no_change_writes_nothing(self, project: Path) -> None:
         write(project, epic())

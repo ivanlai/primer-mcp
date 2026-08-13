@@ -212,5 +212,15 @@ def recompute_parents(project_dir: Path, ticket_id: str) -> list[str]:
         # status when we reach it on the next pass of this loop.
         tickets[parent_id] = updated
         changed.append(f"{parent.id} is now {new_status} ({parent.type} status is derived)")
+        if new_status == "done":
+            review_target = (
+                "goals and success criteria"
+                if isinstance(parent, Epic)
+                else "acceptance criteria and definition of done"
+            )
+            changed.append(
+                f"Nudge: {parent.id} is complete — review its {review_target} "
+                f"with the user and update anything that shifted during the work."
+            )
 
     return changed

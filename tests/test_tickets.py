@@ -30,8 +30,6 @@ EPIC_HEADINGS = [
     "## Constraints",
     "## Non-Goals",
     "## Success Criteria",
-    "## Child ADRs",
-    "## Child Stories",
 ]
 ADR_HEADINGS = [
     "## Parent Epic",
@@ -714,10 +712,15 @@ class TestDerivedStatusCascade:
         assert status_of(project, epic_id) == "done"
 
     def test_cascade_is_reported_to_the_agent(self, project: Path) -> None:
-        # The agent needs to know the parents moved; it did not ask for it.
         _, story_id, task_id = self.scaffold(project)
         lines = self.finish(project, task_id)
         assert any(story_id in line and "done" in line for line in lines)
+
+    def test_nudges_review_when_parent_becomes_done(self, project: Path) -> None:
+        epic_id, story_id, task_id = self.scaffold(project)
+        lines = self.finish(project, task_id)
+        assert any("Nudge" in line and story_id in line and "acceptance criteria" in line for line in lines)
+        assert any("Nudge" in line and epic_id in line and "goals" in line for line in lines)
 
     def test_new_task_reopens_a_finished_story_and_epic(self, project: Path) -> None:
         epic_id, story_id, task_id = self.scaffold(project)

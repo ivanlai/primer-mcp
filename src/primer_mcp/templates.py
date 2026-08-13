@@ -23,9 +23,7 @@ def epic_body(
         f"## Goals\n{_bullets(goals)}\n\n"
         f"## Constraints\n{_bullets(constraints)}\n\n"
         f"## Non-Goals\n{_bullets(non_goals)}\n\n"
-        f"## Success Criteria\n{_bullets(success_criteria)}\n\n"
-        f"## Child ADRs\n- (none yet)\n\n"
-        f"## Child Stories\n- (none yet)"
+        f"## Success Criteria\n{_bullets(success_criteria)}"
     )
 
 

@@ -98,7 +98,7 @@ Agent: → Verified TK-010 (evidence: "all tests pass — a1b2c3d")
 
 Every ticket is a markdown file in `primer/`, committed alongside your code. The `export_graph` tool visualises how they connect:
 
-![Demo project graph](assets/demo-graph.png)
+![Demo project graph](https://raw.githubusercontent.com/ivanlai/primer-mcp/main/assets/demo-graph.png)
 
 *Clone the repo and open [assets/demo-graph.html](assets/demo-graph.html) for the interactive version — click any node to see its full ticket.*
 

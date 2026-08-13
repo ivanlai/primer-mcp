@@ -42,12 +42,9 @@ ADR_HEADINGS = [
 ]
 
 
-
 class TestUpdateSection:
     BODY = (
-        "## What to do\nfix the bug\n\n"
-        "## Completion Notes\nold notes\n\n"
-        "## Verification Evidence\n"
+        "## What to do\nfix the bug\n\n## Completion Notes\nold notes\n\n## Verification Evidence\n"
     )
 
     def test_replaces_exact_heading(self) -> None:
@@ -151,8 +148,13 @@ class TestRecordAdr:
 
 def make_adr(project: Path, epic_id: str) -> str:
     lines = record_adr(
-        project, epic_id, title="Use markdown", context="Need a store.",
-        decision="Markdown files.", alternatives=["SQLite"], consequences="Git-native.",
+        project,
+        epic_id,
+        title="Use markdown",
+        context="Need a store.",
+        decision="Markdown files.",
+        alternatives=["SQLite"],
+        consequences="Git-native.",
     )
     return lines[0].split()[1].rstrip(":")
 
@@ -193,9 +195,7 @@ class TestCreateStory:
         epic_id = make_epic(project)
         make_adr(project, epic_id)
         story_id = make_story(project, epic_id)
-        ticket, body = loads_ticket(
-            (project / f"primer/stories/{story_id}.md").read_text()
-        )
+        ticket, body = loads_ticket((project / f"primer/stories/{story_id}.md").read_text())
         assert isinstance(ticket, Story)
         assert ticket.epic_id == epic_id
         assert ticket.status == "todo"
@@ -205,9 +205,7 @@ class TestCreateStory:
         epic_id = make_epic(project)
         make_adr(project, epic_id)
         make_story(project, epic_id)
-        _, body = loads_ticket(
-            (project / "primer/stories/ST-001.md").read_text()
-        )
+        _, body = loads_ticket((project / "primer/stories/ST-001.md").read_text())
         positions = [body.find(h) for h in STORY_HEADINGS]
         assert -1 not in positions
         assert positions == sorted(positions)
@@ -216,9 +214,7 @@ class TestCreateStory:
         epic_id = make_epic(project)
         make_adr(project, epic_id)
         create_story(project, epic_id, "s", what="w", acceptance_criteria=["passes", "fast"])
-        _, body = loads_ticket(
-            (project / "primer/stories/ST-001.md").read_text()
-        )
+        _, body = loads_ticket((project / "primer/stories/ST-001.md").read_text())
         assert "- [ ] passes" in body
         assert "- [ ] fast" in body
 
@@ -246,9 +242,7 @@ class TestCreateStory:
         epic_id = make_epic(project)
         adr_id = make_adr(project, epic_id)
         create_story(project, epic_id, "s", what="w", adr_ids=[adr_id])
-        ticket, body = loads_ticket(
-            (project / "primer/stories/ST-001.md").read_text()
-        )
+        ticket, body = loads_ticket((project / "primer/stories/ST-001.md").read_text())
         assert isinstance(ticket, Story)
         assert ticket.adr_ids == [adr_id]
         assert f"[[{adr_id}]]" in body
@@ -271,9 +265,7 @@ class TestCreateStory:
         make_adr(project, epic_id)
         result = create_story(project, epic_id, "s", what="w", adr_ids=[])
         assert any("ST-" in line for line in result)
-        ticket, _ = loads_ticket(
-            (project / "primer/stories/ST-001.md").read_text()
-        )
+        ticket, _ = loads_ticket((project / "primer/stories/ST-001.md").read_text())
         assert isinstance(ticket, Story)
         assert ticket.adr_ids == []
 
@@ -285,9 +277,7 @@ class TestCreateTask:
         story_id = make_story(project, epic_id)
         lines = create_task(project, story_id, "Do thing", "Implement it", "test passes")
         task_id = lines[0].split()[1].rstrip(":")
-        ticket, body = loads_ticket(
-            (project / f"primer/tasks/{task_id}.md").read_text()
-        )
+        ticket, body = loads_ticket((project / f"primer/tasks/{task_id}.md").read_text())
         assert isinstance(ticket, Task)
         assert ticket.story_id == story_id
         assert ticket.testable_outcome == "test passes"
@@ -299,9 +289,7 @@ class TestCreateTask:
         make_adr(project, epic_id)
         story_id = make_story(project, epic_id)
         create_task(project, story_id, "t", "do it", "done")
-        _, body = loads_ticket(
-            (project / "primer/tasks/TK-001.md").read_text()
-        )
+        _, body = loads_ticket((project / "primer/tasks/TK-001.md").read_text())
         positions = [body.find(h) for h in TASK_HEADINGS]
         assert -1 not in positions
         assert positions == sorted(positions)
@@ -321,9 +309,7 @@ class TestCreateSpike:
         story_id = make_story(project, epic_id)
         lines = create_spike(project, story_id, "Investigate X", "Is X feasible?", "2 hours")
         spike_id = lines[0].split()[1].rstrip(":")
-        ticket, body = loads_ticket(
-            (project / f"primer/spikes/{spike_id}.md").read_text()
-        )
+        ticket, body = loads_ticket((project / f"primer/spikes/{spike_id}.md").read_text())
         assert isinstance(ticket, Spike)
         assert ticket.story_id == story_id
         assert ticket.question == "Is X feasible?"
@@ -335,9 +321,7 @@ class TestCreateSpike:
         make_adr(project, epic_id)
         story_id = make_story(project, epic_id)
         create_spike(project, story_id, "s", "q?", "1 hour")
-        _, body = loads_ticket(
-            (project / "primer/spikes/SP-001.md").read_text()
-        )
+        _, body = loads_ticket((project / "primer/spikes/SP-001.md").read_text())
         positions = [body.find(h) for h in SPIKE_HEADINGS]
         assert -1 not in positions
         assert positions == sorted(positions)
@@ -368,9 +352,7 @@ class TestStartTask:
         task_id = self._make_task(project)
         lines = start_task(project, task_id)
         assert "in-progress" in lines[0]
-        ticket, _ = loads_ticket(
-            (project / f"primer/tasks/{task_id}.md").read_text()
-        )
+        ticket, _ = loads_ticket((project / f"primer/tasks/{task_id}.md").read_text())
         assert isinstance(ticket, Task)
         assert ticket.status == "in-progress"
 
@@ -392,9 +374,7 @@ class TestStartTask:
         start_task(project, task_id)
         result = start_task(project, task_id)
         assert any("already in-progress" in line for line in result)
-        reloaded, _ = loads_ticket(
-            (project / f"primer/tasks/{task_id}.md").read_text()
-        )
+        reloaded, _ = loads_ticket((project / f"primer/tasks/{task_id}.md").read_text())
         assert isinstance(reloaded, Task)
         assert reloaded.status == "in-progress"
 
@@ -464,9 +444,7 @@ class TestCompleteTask:
         task_id = _make_in_progress_task(project)
         lines = complete_task(project, task_id, "Implemented the feature")
         assert "completed" in lines[0]
-        ticket, body = loads_ticket(
-            (project / f"primer/tasks/{task_id}.md").read_text()
-        )
+        ticket, body = loads_ticket((project / f"primer/tasks/{task_id}.md").read_text())
         assert isinstance(ticket, Task)
         assert ticket.status == "completed"
         assert ticket.completed_notes == "Implemented the feature"
@@ -475,9 +453,7 @@ class TestCompleteTask:
     def test_body_completion_notes_updated(self, project: Path) -> None:
         task_id = _make_in_progress_task(project)
         complete_task(project, task_id, "All tests pass")
-        _, body = loads_ticket(
-            (project / f"primer/tasks/{task_id}.md").read_text()
-        )
+        _, body = loads_ticket((project / f"primer/tasks/{task_id}.md").read_text())
         notes_pos = body.find("## Completion Notes")
         evidence_pos = body.find("## Verification Evidence")
         assert notes_pos < evidence_pos
@@ -492,9 +468,7 @@ class TestCompleteTask:
         task_id = lines[0].split()[1].rstrip(":")
         result = complete_task(project, task_id, "notes")
         assert any("start_task" in line for line in result)
-        reloaded, _ = loads_ticket(
-            (project / f"primer/tasks/{task_id}.md").read_text()
-        )
+        reloaded, _ = loads_ticket((project / f"primer/tasks/{task_id}.md").read_text())
         assert isinstance(reloaded, Task)
         assert reloaded.status == "completed"
         assert reloaded.completed_notes == "notes"
@@ -504,9 +478,7 @@ class TestCompleteTask:
         path = project / f"primer/tasks/{task_id}.md"
         ticket, body = loads_ticket(path.read_text())
         assert isinstance(ticket, Task)
-        path.write_text(
-            dumps_ticket(ticket.model_copy(update={"status": "blocked"}), body)
-        )
+        path.write_text(dumps_ticket(ticket.model_copy(update={"status": "blocked"}), body))
         result = complete_task(project, task_id, "notes")
         assert any("blocked" in line for line in result)
         reloaded, _ = loads_ticket(path.read_text())
@@ -518,9 +490,7 @@ class TestCompleteTask:
         complete_task(project, task_id, "done")
         result = complete_task(project, task_id, "updated notes")
         assert any("already completed" in line for line in result)
-        reloaded, _ = loads_ticket(
-            (project / f"primer/tasks/{task_id}.md").read_text()
-        )
+        reloaded, _ = loads_ticket((project / f"primer/tasks/{task_id}.md").read_text())
         assert isinstance(reloaded, Task)
         assert reloaded.completed_notes == "updated notes"
 
@@ -530,9 +500,7 @@ class TestCompleteTask:
         verify_task(project, task_id, "proof")
         result = complete_task(project, task_id, "again")
         assert any("already verified" in line for line in result)
-        reloaded, _ = loads_ticket(
-            (project / f"primer/tasks/{task_id}.md").read_text()
-        )
+        reloaded, _ = loads_ticket((project / f"primer/tasks/{task_id}.md").read_text())
         assert isinstance(reloaded, Task)
         assert reloaded.status == "completed"
 
@@ -557,9 +525,7 @@ class TestVerifyTask:
         complete_task(project, task_id, "done")
         lines = verify_task(project, task_id, "pytest output: 5 passed")
         assert "verified" in lines[0]
-        ticket, body = loads_ticket(
-            (project / f"primer/tasks/{task_id}.md").read_text()
-        )
+        ticket, body = loads_ticket((project / f"primer/tasks/{task_id}.md").read_text())
         assert isinstance(ticket, Task)
         assert ticket.status == "verified"
         assert ticket.verified_evidence == "pytest output: 5 passed"
@@ -569,9 +535,7 @@ class TestVerifyTask:
         task_id = _make_in_progress_task(project)
         complete_task(project, task_id, "done")
         verify_task(project, task_id, "All green")
-        _, body = loads_ticket(
-            (project / f"primer/tasks/{task_id}.md").read_text()
-        )
+        _, body = loads_ticket((project / f"primer/tasks/{task_id}.md").read_text())
         evidence_pos = body.find("## Verification Evidence")
         assert evidence_pos != -1
         section = body[evidence_pos:]
@@ -585,9 +549,7 @@ class TestVerifyTask:
         task_id = lines[0].split()[1].rstrip(":")
         result = verify_task(project, task_id, "evidence")
         assert any("complete_task" in line for line in result)
-        reloaded, _ = loads_ticket(
-            (project / f"primer/tasks/{task_id}.md").read_text()
-        )
+        reloaded, _ = loads_ticket((project / f"primer/tasks/{task_id}.md").read_text())
         assert isinstance(reloaded, Task)
         assert reloaded.status == "verified"
         assert reloaded.verified_evidence == "evidence"
@@ -596,9 +558,7 @@ class TestVerifyTask:
         task_id = _make_in_progress_task(project)
         result = verify_task(project, task_id, "evidence")
         assert any("complete_task" in line for line in result)
-        reloaded, _ = loads_ticket(
-            (project / f"primer/tasks/{task_id}.md").read_text()
-        )
+        reloaded, _ = loads_ticket((project / f"primer/tasks/{task_id}.md").read_text())
         assert isinstance(reloaded, Task)
         assert reloaded.status == "verified"
 
@@ -607,9 +567,7 @@ class TestVerifyTask:
         path = project / f"primer/tasks/{task_id}.md"
         ticket, body = loads_ticket(path.read_text())
         assert isinstance(ticket, Task)
-        path.write_text(
-            dumps_ticket(ticket.model_copy(update={"status": "blocked"}), body)
-        )
+        path.write_text(dumps_ticket(ticket.model_copy(update={"status": "blocked"}), body))
         result = verify_task(project, task_id, "evidence")
         assert any("blocked" in line for line in result)
         reloaded, _ = loads_ticket(path.read_text())
@@ -622,9 +580,7 @@ class TestVerifyTask:
         verify_task(project, task_id, "proof")
         result = verify_task(project, task_id, "better proof")
         assert any("already verified" in line for line in result)
-        reloaded, _ = loads_ticket(
-            (project / f"primer/tasks/{task_id}.md").read_text()
-        )
+        reloaded, _ = loads_ticket((project / f"primer/tasks/{task_id}.md").read_text())
         assert isinstance(reloaded, Task)
         assert reloaded.verified_evidence == "better proof"
 
@@ -647,9 +603,7 @@ class TestVerifyTask:
         task_id = _make_in_progress_task(project)
         complete_task(project, task_id, "done")
         verify_task(project, task_id, "3 tests pass", commit="abc1234")
-        reloaded, body = loads_ticket(
-            (project / f"primer/tasks/{task_id}.md").read_text()
-        )
+        reloaded, body = loads_ticket((project / f"primer/tasks/{task_id}.md").read_text())
         assert isinstance(reloaded, Task)
         assert reloaded.verified_evidence == "3 tests pass (commit abc1234)"
         assert "(commit abc1234)" in body
@@ -660,9 +614,7 @@ class TestCompleteSpike:
         spike_id = _make_spike(project)
         lines = complete_spike(project, spike_id, "X is feasible")
         assert "done" in lines[0]
-        ticket, body = loads_ticket(
-            (project / f"primer/spikes/{spike_id}.md").read_text()
-        )
+        ticket, body = loads_ticket((project / f"primer/spikes/{spike_id}.md").read_text())
         assert isinstance(ticket, Spike)
         assert ticket.status == "done"
         assert ticket.findings == "X is feasible"
@@ -673,9 +625,7 @@ class TestCompleteSpike:
         path = project / f"primer/spikes/{spike_id}.md"
         ticket, body = loads_ticket(path.read_text())
         assert isinstance(ticket, Spike)
-        path.write_text(
-            dumps_ticket(ticket.model_copy(update={"status": "in-progress"}), body)
-        )
+        path.write_text(dumps_ticket(ticket.model_copy(update={"status": "in-progress"}), body))
         complete_spike(project, spike_id, "Findings here")
         reloaded, _ = loads_ticket(path.read_text())
         assert isinstance(reloaded, Spike)
@@ -684,9 +634,7 @@ class TestCompleteSpike:
     def test_body_findings_updated(self, project: Path) -> None:
         spike_id = _make_spike(project)
         complete_spike(project, spike_id, "Answer: yes it works")
-        _, body = loads_ticket(
-            (project / f"primer/spikes/{spike_id}.md").read_text()
-        )
+        _, body = loads_ticket((project / f"primer/spikes/{spike_id}.md").read_text())
         findings_pos = body.find("## Findings")
         assert findings_pos != -1
         section = body[findings_pos:]
@@ -697,9 +645,7 @@ class TestCompleteSpike:
         path = project / f"primer/spikes/{spike_id}.md"
         ticket, body = loads_ticket(path.read_text())
         assert isinstance(ticket, Spike)
-        path.write_text(
-            dumps_ticket(ticket.model_copy(update={"status": "blocked"}), body)
-        )
+        path.write_text(dumps_ticket(ticket.model_copy(update={"status": "blocked"}), body))
         result = complete_spike(project, spike_id, "findings")
         assert any("blocked" in line for line in result)
         reloaded, _ = loads_ticket(path.read_text())
@@ -711,9 +657,7 @@ class TestCompleteSpike:
         complete_spike(project, spike_id, "findings")
         result = complete_spike(project, spike_id, "updated findings")
         assert any("already done" in line for line in result)
-        reloaded, _ = loads_ticket(
-            (project / f"primer/spikes/{spike_id}.md").read_text()
-        )
+        reloaded, _ = loads_ticket((project / f"primer/spikes/{spike_id}.md").read_text())
         assert isinstance(reloaded, Spike)
         assert reloaded.findings == "updated findings"
 
@@ -748,9 +692,11 @@ class TestDerivedStatusCascade:
         epic_id = make_epic(project)
         make_adr(project, epic_id)
         story_id = make_story(project, epic_id)
-        task_id = create_task(
-            project, story_id, "Only task", what_to_do="w", testable_outcome="o"
-        )[0].split()[1].rstrip(":")
+        task_id = (
+            create_task(project, story_id, "Only task", what_to_do="w", testable_outcome="o")[0]
+            .split()[1]
+            .rstrip(":")
+        )
         return epic_id, story_id, task_id
 
     def finish(self, project: Path, task_id: str) -> list[str]:
@@ -794,9 +740,11 @@ class TestDerivedStatusCascade:
         epic_id = make_epic(project)
         make_adr(project, epic_id)
         story_id = make_story(project, epic_id)
-        spike_id = create_spike(
-            project, story_id, "Investigate", question="?", timebox="1h"
-        )[0].split()[1].rstrip(":")
+        spike_id = (
+            create_spike(project, story_id, "Investigate", question="?", timebox="1h")[0]
+            .split()[1]
+            .rstrip(":")
+        )
         complete_spike(project, spike_id, "findings")
         assert status_of(project, story_id) == "done"
 

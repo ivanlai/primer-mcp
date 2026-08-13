@@ -233,8 +233,7 @@ def delete_ticket(project_dir: Path, ticket_id: str) -> list[str]:
     if kids:
         kid_ids = ", ".join(k.id for k in kids)
         lines.append(
-            f"Note: {ticket_id} had children: {kid_ids}. "
-            "Call delete_ticket on each to clean up."
+            f"Note: {ticket_id} had children: {kid_ids}. Call delete_ticket on each to clean up."
         )
 
     return lines
@@ -470,20 +469,24 @@ def list_actionable(project_dir: Path) -> list[str]:
         ):
             continue
         if isinstance(ticket, Spike):
-            options.append([
-                ticket.story_id,
-                ticket.id,
-                ticket.title,
-                f"{ticket.question} (timebox: {ticket.timebox})",
-            ])
+            options.append(
+                [
+                    ticket.story_id,
+                    ticket.id,
+                    ticket.title,
+                    f"{ticket.question} (timebox: {ticket.timebox})",
+                ]
+            )
         else:
             assert isinstance(ticket, Task)
-            options.append([
-                ticket.story_id,
-                ticket.id,
-                ticket.title,
-                ticket.testable_outcome,
-            ])
+            options.append(
+                [
+                    ticket.story_id,
+                    ticket.id,
+                    ticket.title,
+                    ticket.testable_outcome,
+                ]
+            )
 
     if options:
         lines += _options_table(
@@ -503,12 +506,12 @@ def list_actionable(project_dir: Path) -> list[str]:
             if blockers:
                 lines.append(f"  {ticket.id} waits on {', '.join(blockers)}")
         if lines[-1].startswith("Nothing"):
-            lines.append(f"  Nothing outstanding in {epic.id}, but it is not done — check its stories.")
+            lines.append(
+                f"  Nothing outstanding in {epic.id}, but it is not done — check its stories."
+            )
 
     if not has_adrs:
         lines.append("")
-        lines.append(
-            f"Note: {epic.id} has no ADRs — consider record_adr to capture decisions."
-        )
+        lines.append(f"Note: {epic.id} has no ADRs — consider record_adr to capture decisions.")
 
     return lines

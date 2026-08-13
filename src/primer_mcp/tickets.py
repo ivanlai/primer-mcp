@@ -128,8 +128,10 @@ def record_adr(
     epic_path = primer / "epics" / f"{epic_id}.md"
     if not epic_path.is_file():
         existing = sorted(p.stem for p in (primer / "epics").glob("EP-*.md"))
-        hint = f"Existing epics: {', '.join(existing)}." if existing else (
-            "No epics exist yet — create one with plan_epic first."
+        hint = (
+            f"Existing epics: {', '.join(existing)}."
+            if existing
+            else ("No epics exist yet — create one with plan_epic first.")
         )
         raise GateError(
             f"Cannot record ADR: epic {epic_id!r} not found. {hint} "
@@ -499,9 +501,7 @@ def complete_spike(
         nudge = f"Note: updating findings on {spike_id} (was already done)."
 
     today = datetime.now(tz=UTC).date()
-    updated = ticket.model_copy(
-        update={"status": "done", "findings": findings, "updated": today}
-    )
+    updated = ticket.model_copy(update={"status": "done", "findings": findings, "updated": today})
     body = _update_section(body, "Findings", findings)
     spike_path.write_text(dumps_ticket(updated, body), encoding="utf-8")
     lines = [

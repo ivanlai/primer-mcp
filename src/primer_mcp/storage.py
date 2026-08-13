@@ -35,9 +35,7 @@ def dumps_ticket(ticket: Ticket, body: str) -> str:
     cleanly in git; dates are written as plain ISO dates.
     """
     metadata = ticket.model_dump(mode="python")
-    front = yaml.dump(
-        metadata, Dumper=_NoAliasDumper, sort_keys=False, allow_unicode=True
-    ).strip()
+    front = yaml.dump(metadata, Dumper=_NoAliasDumper, sort_keys=False, allow_unicode=True).strip()
     return f"---\n{front}\n---\n\n{body.strip()}\n"
 
 

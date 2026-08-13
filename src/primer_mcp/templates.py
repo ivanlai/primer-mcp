@@ -7,7 +7,6 @@ def _bullets(items: list[str], empty: str = "(none)") -> str:
     return "\n".join(f"- {item}" for item in items) if items else f"- {empty}"
 
 
-
 def epic_body(
     why: str,
     goals: list[str],

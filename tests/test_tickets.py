@@ -719,7 +719,9 @@ class TestDerivedStatusCascade:
     def test_nudges_review_when_parent_becomes_done(self, project: Path) -> None:
         epic_id, story_id, task_id = self.scaffold(project)
         lines = self.finish(project, task_id)
-        assert any("Nudge" in line and story_id in line and "acceptance criteria" in line for line in lines)
+        assert any(
+            "Nudge" in line and story_id in line and "acceptance criteria" in line for line in lines
+        )
         assert any("Nudge" in line and epic_id in line and "goals" in line for line in lines)
 
     def test_new_task_reopens_a_finished_story_and_epic(self, project: Path) -> None:

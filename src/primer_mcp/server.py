@@ -31,6 +31,10 @@ decisions, then break it into stories and tasks. The tools suggest this
 flow but do not block you from skipping steps — use your judgement.
 Tickets are plain markdown with YAML frontmatter — read and edit them
 directly where the tools fall short.
+
+Before implementing new work (feature, bug fix, improvement), propose
+creating a ticket so the work is tracked. The user can decline — the
+nudge is a suggestion, not a gate.
 """
 
 

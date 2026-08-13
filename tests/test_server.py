@@ -7,8 +7,16 @@ from pathlib import Path
 import anyio
 from mcp.client import Client
 
+from primer_mcp.graph import find_path
 from primer_mcp.project import init_project
-from primer_mcp.server import create_server
+from primer_mcp.server import _call, create_server
+from primer_mcp.tickets import (
+    complete_task,
+    create_story,
+    create_task,
+    plan_epic,
+    record_adr,
+)
 
 EXPECTED_TOOLS = {
     "init_project",
@@ -86,6 +94,21 @@ class TestGateErrorsBecomeResponses:
                 assert "init_project" in _text(result)
 
         anyio.run(_test)
+
+    def test_unexpected_exception_becomes_steering_response(self, tmp_path: Path) -> None:
+        init_project(tmp_path, "demo")
+        plan_epic(tmp_path, "E", "w", ["g"])
+        record_adr(tmp_path, "EP-001", "A", "c", "d", [], "q")
+        create_story(tmp_path, "EP-001", "S", ["ac"])
+        create_task(tmp_path, "ST-001", "T", "what", "to")
+
+        path = find_path(tmp_path, "TK-001")
+        text = path.read_text()
+        path.write_text(text.replace("## Completion Notes", "## Notes"))
+
+        result = _call(complete_task, tmp_path, "TK-001", "done")
+        assert "ValueError" in result
+        assert "Completion Notes" in result
 
 
 class TestPromptRegistration:

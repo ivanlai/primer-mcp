@@ -39,6 +39,8 @@ def _call(fn: Callable[..., list[str]], *args: Any) -> str:
         return "\n".join(fn(*args))
     except GateError as err:
         return str(err)
+    except Exception as err:
+        return f"{type(err).__name__}: {err}"
 
 
 def create_server(project_dir: Path) -> MCPServer:

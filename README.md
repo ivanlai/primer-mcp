@@ -8,25 +8,9 @@ A Jira-lite MCP server that guides planning-first workflows for AI-assisted deve
 
 AI coding agents could jump straight to implementation if insufficient guidance is given. Primer-mcp makes them plan first: state why the work matters, record decisions, break it into stories and tasks, then complete and verify each one. The tickets are plain markdown with YAML frontmatter, committed alongside your code — no external service, no database, fully visible in your repo.
 
-## Install
+## Quick start
 
 Requires Python 3.12+ and [uv](https://docs.astral.sh/uv/getting-started/installation/).
-
-```bash
-# Run directly (recommended for MCP)
-uvx primer-mcp
-
-# Or install permanently
-uv tool install primer-mcp
-
-# Update to latest
-uv tool upgrade primer-mcp
-
-# Uninstall
-uv tool uninstall primer-mcp
-```
-
-## Quick start
 
 Add to your MCP client config (e.g. Claude Code `settings.json`, Claude Desktop `claude_desktop_config.json`):
 
@@ -41,7 +25,23 @@ Add to your MCP client config (e.g. Claude Code `settings.json`, Claude Desktop 
 }
 ```
 
+That's it — your MCP client downloads and runs primer-mcp automatically. You don't need to install anything manually.
+
 Tell your AI agent what you want to build — it handles the rest. The server guides the agent through a planning-first workflow: why the work matters, decisions, stories, tasks, completion. Not sure what to do next? Ask your agent — it reads the current state and knows what comes next.
+
+### Manual install (optional)
+
+If you prefer to install primer-mcp as a standalone tool (e.g. for the `list-actionable` CLI command):
+
+```bash
+uv tool install primer-mcp
+
+# Update to latest
+uv tool upgrade primer-mcp
+
+# Uninstall
+uv tool uninstall primer-mcp
+```
 
 ## What it looks like
 

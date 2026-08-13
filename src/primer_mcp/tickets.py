@@ -17,7 +17,7 @@ import frontmatter
 from primer_mcp.errors import GateError
 from primer_mcp.graph import recompute_parents
 from primer_mcp.models import ID_PREFIX, Adr, Epic, Spike, Story, Task
-from primer_mcp.project import SUBDIR_FOR_TYPE, require_store
+from primer_mcp.project import PRIMER_DIR, SUBDIR_FOR_TYPE, init_project, require_store
 from primer_mcp.storage import dumps_ticket, loads_ticket
 from primer_mcp.templates import adr_body, epic_body, spike_body, story_body, task_body
 
@@ -81,6 +81,10 @@ def plan_epic(
     """
     Create an Epic ticket. Returns steering lines for the tool response.
     """
+    init_lines: list[str] = []
+    if not (project_dir / PRIMER_DIR).is_dir():
+        init_lines = init_project(project_dir, project_dir.name)
+
     primer = require_store(project_dir)
     epic_id = next_id(primer, "epic")
     today = datetime.now(tz=UTC).date()
@@ -104,6 +108,7 @@ def plan_epic(
     path = primer / "epics" / f"{epic_id}.md"
     path.write_text(dumps_ticket(epic, body), encoding="utf-8")
     return [
+        *init_lines,
         f"Created {epic_id}: {title} ({path})",
         (
             f"Next: record at least one architectural decision with "

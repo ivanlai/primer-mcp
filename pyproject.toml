@@ -55,6 +55,7 @@ packages = ["src/primer_mcp"]
 exclude = [
     "primer/",   # this project's own ticket store: project management, not software
     ".claude/",  # local agent settings, carries absolute paths from the dev machine
+    "docs/",     # design docs — stale once the code is the source of truth
 ]
 
 [tool.ruff]

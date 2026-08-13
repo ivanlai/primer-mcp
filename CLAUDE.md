@@ -2,18 +2,12 @@
 
 A Jira-lite MCP server that enforces planning-first workflows for AI-assisted development. Tickets are markdown files on the user's local disk. The AI agent is the interface.
 
-## Project docs (read these first)
-
-- `docs/planning.md` — goals, constraints, non-goals, success criteria
-- `docs/architecture.md` — all key decisions, ticket schema, graph protocol, body templates
-- `docs/epic-001.md` — prose descriptions of the stories; `primer/` is the live backlog
-
 ## Key conventions
 
 - **Language:** Python, packaged with `uv`, distributed via `uvx`
 - **Data store:** Markdown + YAML frontmatter in `primer/` (visible, not dot-hidden, and committed — this repo dogfoods its own store)
 - **No provider-specific code** — server must be MCP-protocol-only, no Anthropic/OpenAI SDK calls
-- **Ticket body templates** are defined in `docs/architecture.md` — follow them exactly when generating ticket files
+- **Ticket body templates** are defined in `src/primer_mcp/templates.py` — follow them exactly when generating ticket files
 - **Graph edges**: `blocked_by` is a base field on ALL ticket types, not just tasks. It is the only stored edge — "A blocks B" is recorded on B (ADR-004)
 - **Two-phase completion:** `complete_task` then `verify_task` — do not collapse into one step
 
@@ -41,7 +35,7 @@ Two-phase completion (`complete_task` then `verify_task`) is recommended and the
 
 ## Plagiarism policy
 
-Do NOT read or reference `groundwork-mcp` or any similar existing repo. All design decisions must come from first principles. The architecture is fully documented in `docs/architecture.md`.
+Do NOT read or reference `groundwork-mcp` or any similar existing repo. All design decisions must come from first principles.
 
 ## Stack
 
@@ -67,13 +61,10 @@ mypy                 # type checking (dev)
 2. Below that output, add your recommendation for what to work on next
    and why.
 
-The live backlog is `primer/`; `docs/epic-001.md` keeps the prose descriptions.
-Story IDs match across both — ST-007 means the query and graph tools story
-everywhere.
-
-Decisions live in `primer/adrs/` (ADR-001 to ADR-007) with the alternatives
-that were rejected. Read those before reopening a settled question — several
-were argued through at length and the reasoning is not in the code.
+The live backlog is `primer/`. Decisions live in `primer/adrs/` (ADR-001 to
+ADR-007) with the alternatives that were rejected. Read those before reopening
+a settled question — several were argued through at length and the reasoning
+is not in the code.
 
 ## primer-mcp
 

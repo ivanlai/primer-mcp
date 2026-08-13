@@ -211,13 +211,13 @@ class TestCreateStory:
         assert -1 not in positions
         assert positions == sorted(positions)
 
-    def test_acceptance_criteria_rendered_as_checklist(self, project: Path) -> None:
+    def test_acceptance_criteria_rendered_as_bullets(self, project: Path) -> None:
         epic_id = make_epic(project)
         make_adr(project, epic_id)
         create_story(project, epic_id, "s", what="w", acceptance_criteria=["passes", "fast"])
         _, body = loads_ticket((project / "primer/stories/ST-001.md").read_text())
-        assert "- [ ] passes" in body
-        assert "- [ ] fast" in body
+        assert "- passes" in body
+        assert "- fast" in body
 
     def test_sequential_ids(self, project: Path) -> None:
         epic_id = make_epic(project)

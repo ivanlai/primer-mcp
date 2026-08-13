@@ -43,6 +43,65 @@ Add to your MCP client config (e.g. Claude Code `settings.json`, Claude Desktop 
 
 Tell your AI agent what you want to build — it handles the rest. The server guides the agent through a planning-first workflow: why the work matters, decisions, stories, tasks, completion. Not sure what to do next? Ask your agent — it reads the current state and knows what comes next.
 
+## What it looks like
+
+A typical session — you describe the work, the agent handles the planning:
+
+```
+You:  I want to add user authentication.
+
+Agent: You have EP-001: "Launch the app" — auth fits under that.
+       Or I can create a separate epic if this is a bigger initiative.
+
+You:  EP-001 is fine.
+
+Agent: Before we build, we should decide on the auth approach.
+       A few common options:
+
+         1. JWT with refresh tokens — stateless, good for mobile/SPAs
+         2. Server-side sessions — simple, but needs sticky storage
+         3. OAuth2 only — delegates to a provider, less to maintain
+            ...
+
+You:  Option 1 — we need mobile support.
+
+Agent: I'll record that decision so we don't revisit it later.
+       → Recorded ADR-003: "Use JWT with refresh tokens"
+         Rejected: server-side sessions (no mobile support),
+                   OAuth2 only (need local accounts too)
+
+       Breaking this into stories.
+       → Created ST-005: "Login and registration endpoints"
+       → Created ST-006: "Token refresh and revocation"
+
+       And tasks for the first story:
+       → Created TK-010: "Add /register endpoint with validation"
+       → Created TK-011: "Add /login endpoint returning JWT pair"
+       → Created TK-012: "Write integration tests for auth flow"
+
+You:  Let's start with TK-010.
+
+Agent: → Started TK-010
+
+       [implements the register endpoint]
+
+       Done — added POST /register with email/password validation,
+       password hashing, and duplicate-email check.
+       → Completed TK-010
+
+You:  Looks good, verify it.
+
+Agent: → Verified TK-010 (evidence: "all tests pass — a1b2c3d")
+
+       TK-011 is next. Want me to continue?
+```
+
+Every ticket is a markdown file in `primer/`, committed alongside your code. The `export_graph` tool visualises how they connect:
+
+![Demo project graph](assets/demo-graph.png)
+
+*Clone the repo and open [assets/demo-graph.html](assets/demo-graph.html) for the interactive version — click any node to see its full ticket.*
+
 ## Tools
 
 Your AI agent calls these tools automatically — you don't need to invoke them directly. You can also ask your agent to call a specific tool if you want more control.

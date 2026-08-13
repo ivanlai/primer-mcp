@@ -93,9 +93,12 @@ class TestPlanEpic:
         assert make_epic(project, "one") == "EP-001"
         assert make_epic(project, "two") == "EP-002"
 
-    def test_uninitialised_project_gated(self, tmp_path: Path) -> None:
-        with pytest.raises(GateError, match="init_project"):
-            plan_epic(tmp_path / "nowhere", "t", why="w", goals=[])
+    def test_auto_inits_uninitialised_project(self, tmp_path: Path) -> None:
+        lines = plan_epic(tmp_path, "My epic", why="w", goals=["g"])
+        assert (tmp_path / "primer").is_dir()
+        assert (tmp_path / "primer/epics/EP-001.md").is_file()
+        assert any("Created primer/" in line or "Found existing primer/" in line for line in lines)
+        assert any("EP-001" in line for line in lines)
 
 
 class TestRecordAdr:

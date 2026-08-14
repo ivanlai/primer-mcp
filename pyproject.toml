@@ -1,6 +1,6 @@
 [project]
 name = "primer-mcp"
-version = "0.1.2"
+version = "0.1.3"
 description = "A Jira-lite MCP server that guides planning-first workflows for AI-assisted development — tickets as markdown files, your AI agent as the interface."
 readme = "README.md"
 license = { file = "LICENSE" }

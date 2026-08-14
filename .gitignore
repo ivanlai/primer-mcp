@@ -206,6 +206,9 @@ tempCodeRunnerFile.py
 # primer-mcp generated output
 primer/graph.html
 
+# Dev notes (not distributed)
+docs/
+
 # Ruff stuff:
 .ruff_cache/
 

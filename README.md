@@ -6,7 +6,7 @@ A Jira-lite MCP server that guides planning-first workflows for AI-assisted deve
 
 ## Why
 
-AI coding agents could jump straight to implementation if insufficient guidance is given. Primer-mcp makes them plan first: state why the work matters, record decisions, break it into stories and tasks, then complete and verify each one. The tickets are plain markdown with YAML frontmatter, committed alongside your code — no external service, no database, fully visible in your repo.
+Getting real value from AI coding agents takes more than prompting — it takes shaping what they build, engineering the workflow around them, and deploying something that holds up in practice. Left to their own devices, agents jump straight to implementation. Primer-mcp makes them plan first: state why the work matters, record decisions and weigh trade-offs, break it into stories and tasks, then complete and verify each one. The tickets are plain markdown with YAML frontmatter, committed alongside your code — no external service, no database, fully visible in your repo and conveniently browsable with tools like [Obsidian](https://obsidian.md).
 
 ## Quick start
 
@@ -101,6 +101,8 @@ Every ticket is a markdown file in `primer/`, committed alongside your code. The
 ![Demo project graph](https://raw.githubusercontent.com/ivanlai/primer-mcp/main/assets/demo-graph.png)
 
 *Clone the repo and open [assets/demo-graph.html](assets/demo-graph.html) for the interactive version — click any node to see its full ticket.*
+
+Since tickets are plain markdown with wikilinks, you can also open `primer/` as an [Obsidian](https://obsidian.md) vault for a live graph that updates as tickets change — no need to re-export.
 
 ## Tools
 

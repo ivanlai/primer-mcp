@@ -143,8 +143,12 @@ _HTML_TEMPLATE = """\
 body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
        display: flex; height: 100vh; background: #1a1a2e; color: #e0e0e0; }}
 #graph {{ flex: 1; }}
-#sidebar {{ width: 360px; background: #16213e; border-left: 1px solid #0f3460;
-            overflow-y: auto; padding: 20px; display: none; }}
+#sidebar {{ width: 360px; min-width: 360px; max-width: 70vw; background: #16213e;
+            border-left: 1px solid #0f3460; overflow-y: auto; padding: 20px;
+            display: none; position: relative; }}
+#sidebar .resize-handle {{ position: absolute; top: 0; left: 0; width: 5px;
+            height: 100%; cursor: col-resize; background: transparent; }}
+#sidebar .resize-handle:hover {{ background: #e94560; }}
 #sidebar.open {{ display: block; }}
 #sidebar h2 {{ margin-bottom: 12px; color: #e94560; font-size: 18px; }}
 #sidebar .field {{ margin-bottom: 10px; }}
@@ -203,6 +207,7 @@ body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans
   <div class="dropdown" id="searchDropdown"></div>
 </div>
 <div id="sidebar">
+  <div class="resize-handle" id="resizeHandle"></div>
   <span class="close" onclick="closeSidebar()">&times;</span>
   <div id="detail"></div>
 </div>
@@ -269,6 +274,20 @@ function closeSidebar() {{
   document.getElementById("sidebar").classList.remove("open");
   if (focusedNode) {{ focusedNode = null; applyFilters(); }}
 }}
+
+(function() {{
+  var handle = document.getElementById("resizeHandle");
+  var sidebar = document.getElementById("sidebar");
+  var startX, startW;
+  handle.addEventListener("mousedown", function(e) {{
+    startX = e.clientX; startW = sidebar.offsetWidth;
+    e.preventDefault();
+    function onMove(e) {{ sidebar.style.width = Math.max(360, startW + (startX - e.clientX)) + "px"; }}
+    function onUp() {{ document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseup", onUp); }}
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  }});
+}})();
 
 function go(id) {{
   network.selectNodes([id]);

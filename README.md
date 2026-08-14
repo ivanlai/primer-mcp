@@ -1,3 +1,5 @@
+<!-- mcp-name: io.github.ivanlai/primer-mcp -->
+
 # primer-mcp
 
 > **Beta** — the core workflow is stable and tested, but the tool is new. Expect rough edges.

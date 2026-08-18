@@ -203,6 +203,10 @@ cython_debug/
 # Temporary file for partial code execution
 tempCodeRunnerFile.py
 
+# Obsidian
+.obsidian/
+primer/Primer-mcp/
+
 # primer-mcp generated output
 primer/graph.html
 

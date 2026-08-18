@@ -30,12 +30,8 @@ Two-phase completion (`complete_task` then `verify_task`) is recommended and the
 - Ask before committing and before pushing — the user reviews the working diff, not the PR page
 - Improvements and simplifications wait until after v0 ships. This is a compact project that showcases the workflow, not an enterprise system; a heavier primer-mcp has no reason to exist when Jira already does
 - Completion is two-phase: `complete_task` with notes, then `verify_task` with evidence. Both are recommended
-- **Tickets hold what git cannot; they never restate it.** Intent before the work — `testable_outcome`, acceptance criteria, an ADR's rejected alternatives — has no other home. What happened, and how, is git's job. So keep ticket bodies at overview level: the goal, not the implementation. Evidence stays one line and points at the commit (`"218 passed, mypy clean — c4ac39f"`). Completion notes have two layers: the frontmatter `completed_notes` field is a terse one-liner for scanning; the `## Completion Notes` body section holds a fuller summary — approach taken, key changes, decisions made — the narrative that would otherwise vanish with the chat session. Duplicating git is what makes Jira miserable, and detail written before the work is what makes tickets lie: TK-007 listed the functions it would add, the real implementation added others, and `verified` is terminal so it says so permanently
+- **Tickets hold what git cannot; they never restate it.** Intent before the work — `testable_outcome`, acceptance criteria, an ADR's rejected alternatives — has no other home. What happened, and how, is git's job. So keep ticket bodies at overview level: the goal, not the implementation. Evidence stays one line and points at the commit (`"218 passed, mypy clean — c4ac39f"`). Completion notes have three layers: (1) the frontmatter `completed_notes` field is a terse one-liner for scanning; (2) the `## Completion Notes` body section opens with a 3–5 line TLDR — approach taken, key changes, decisions made; (3) below the TLDR, a `### Details` subsection carries the full explanation the agent gave in chat — reasoning, alternatives considered, how pieces fit together. This is the narrative that would otherwise vanish with the chat session. For genuinely simple tasks, the TLDR alone suffices and `### Details` can be omitted. Duplicating git is what makes Jira miserable, and detail written before the work is what makes tickets lie: TK-007 listed the functions it would add, the real implementation added others, and `verified` is terminal so it says so permanently
 - Detail is safe where the content describes a moment rather than a state, which is why ADRs are the exception: a rejected alternative stays true forever, and a reversal is a new ADR superseding the old one, not an edit
-
-## Plagiarism policy
-
-Do NOT read or reference `groundwork-mcp` or any similar existing repo. All design decisions must come from first principles.
 
 ## Stack
 
@@ -86,9 +82,9 @@ and guide the workflow. Hand-edit where the tools fall short.
 - Before committing, check whether any tickets completed or verified in
   this session have completion notes that still reflect the actual work.
   If the implementation evolved after the notes were written, update
-  both layers before staging: the frontmatter `completed_notes` (terse
-  one-liner) and the `## Completion Notes` body section (fuller summary
-  — approach taken, key changes, decisions made).
+  all layers before staging: the frontmatter `completed_notes` (terse
+  one-liner), the `## Completion Notes` TLDR (3–5 lines), and the
+  `### Details` subsection (full chat-level explanation).
 - When the user reports a bug or small fix, check for a standing bug-fix
   story under the epic before creating a new story. Small fixes (1–2
   tasks) go as tasks under that story; larger efforts (3+ tasks) get

@@ -10,6 +10,8 @@ A Jira-lite MCP server that guides planning-first workflows for AI-assisted deve
 
 Getting real value from AI coding agents takes more than prompting — it takes shaping what they build, engineering the workflow around them, and deploying something that holds up in practice. Left to their own devices, agents jump straight to implementation. Primer-mcp makes them plan first: state why the work matters, record decisions and weigh trade-offs, break it into stories and tasks, then complete and verify each one. The tickets are plain markdown with YAML frontmatter, committed alongside your code — no external service, no database, fully visible in your repo and conveniently browsable with tools like [Obsidian](https://obsidian.md).
 
+primer-mcp is designed for solo developers and small projects — one person (and their AI agent) working through a backlog. It doesn't have assignment, notifications, or multi-user coordination, and that's deliberate: it's a lightweight complement to the AI workflow, not a replacement for Jira.
+
 ## Quick start
 
 Requires Python 3.12+ and [uv](https://docs.astral.sh/uv/getting-started/installation/).

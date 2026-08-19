@@ -187,9 +187,9 @@ and guide the workflow. Hand-edit where the tools fall short.
   own story. The user can decline.
 ```
 
-## Graduating to Jira
+## Graduating to Jira (experimental)
 
-primer-mcp tickets map directly to Jira concepts (Epic, Story, Task, ADR). When a project outgrows local markdown files, use the `export_jira` prompt with any Jira MCP server to push tickets to Jira. The `external_ref` field on each ticket tracks the Jira key, so re-exports update existing issues instead of creating duplicates. `import_jira` goes the other direction.
+primer-mcp tickets map directly to Jira concepts (Epic, Story, Task, ADR). When a project outgrows local markdown files, use the `export_jira` prompt with any Jira MCP server to push tickets to Jira. The `external_ref` field on each ticket tracks the Jira key, so re-exports update existing issues instead of creating duplicates. `import_jira` goes the other direction. Both prompts are experimental and have not been tested end-to-end.
 
 ## This repo dogfoods itself
 

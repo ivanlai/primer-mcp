@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from textwrap import dedent
+
 
 def _bullets(items: list[str], empty: str = "(none)") -> str:
     return "\n".join(f"- {item}" for item in items) if items else f"- {empty}"
@@ -14,13 +16,21 @@ def epic_body(
     non_goals: list[str],
     success_criteria: list[str],
 ) -> str:
-    return (
-        f"## Why\n{why}\n\n"
-        f"## Goals\n{_bullets(goals)}\n\n"
-        f"## Constraints\n{_bullets(constraints)}\n\n"
-        f"## Non-Goals\n{_bullets(non_goals)}\n\n"
-        f"## Success Criteria\n{_bullets(success_criteria)}"
-    )
+    return dedent(f"""\
+        ## Why
+        {why}
+
+        ## Goals
+        {_bullets(goals)}
+
+        ## Constraints
+        {_bullets(constraints)}
+
+        ## Non-Goals
+        {_bullets(non_goals)}
+
+        ## Success Criteria
+        {_bullets(success_criteria)}""")
 
 
 def adr_body(
@@ -30,13 +40,21 @@ def adr_body(
     alternatives: list[str],
     consequences: str,
 ) -> str:
-    return (
-        f"## Parent Epic\n[[{epic_id}]]\n\n"
-        f"## Context\n{context}\n\n"
-        f"## Decision\n{decision}\n\n"
-        f"## Alternatives Considered\n{_bullets(alternatives, empty='(none considered)')}\n\n"
-        f"## Consequences\n{consequences}"
-    )
+    return dedent(f"""\
+        ## Parent Epic
+        [[{epic_id}]]
+
+        ## Context
+        {context}
+
+        ## Decision
+        {decision}
+
+        ## Alternatives Considered
+        {_bullets(alternatives, empty="(none considered)")}
+
+        ## Consequences
+        {consequences}""")
 
 
 def story_body(
@@ -49,14 +67,24 @@ def story_body(
     adr_links = (
         _bullets([f"[[{aid}]]" for aid in adr_ids], empty="(none)") if adr_ids else "- (none)"
     )
-    return (
-        f"## Parent Epic\n[[{epic_id}]]\n\n"
-        f"## Governing ADRs\n{adr_links}\n\n"
-        f"## What\n{what}\n\n"
-        f"## Acceptance Criteria\n{_bullets(acceptance_criteria)}\n\n"
-        f"## Definition of Done\n{_bullets(definition_of_done)}\n\n"
-        f"## Dependencies\n- (none)"
-    )
+    return dedent(f"""\
+        ## Parent Epic
+        [[{epic_id}]]
+
+        ## Governing ADRs
+        {adr_links}
+
+        ## What
+        {what}
+
+        ## Acceptance Criteria
+        {_bullets(acceptance_criteria)}
+
+        ## Definition of Done
+        {_bullets(definition_of_done)}
+
+        ## Dependencies
+        - (none)""")
 
 
 def task_body(
@@ -64,14 +92,23 @@ def task_body(
     what_to_do: str,
     testable_outcome: str,
 ) -> str:
-    return (
-        f"## Parent Story\n[[{story_id}]]\n\n"
-        f"## What to do\n{what_to_do}\n\n"
-        f"## Testable Outcome\n{testable_outcome}\n\n"
-        f"## Dependencies\n- (none)\n\n"
-        f"## Completion Notes\n\n\n"
-        f"## Verification Evidence"
-    )
+    return dedent(f"""\
+        ## Parent Story
+        [[{story_id}]]
+
+        ## What to do
+        {what_to_do}
+
+        ## Testable Outcome
+        {testable_outcome}
+
+        ## Dependencies
+        - (none)
+
+        ## Completion Notes
+
+
+        ## Verification Evidence""")
 
 
 def spike_body(
@@ -79,9 +116,14 @@ def spike_body(
     question: str,
     timebox: str,
 ) -> str:
-    return (
-        f"## Parent Story\n[[{story_id}]]\n\n"
-        f"## Question\n{question}\n\n"
-        f"## Timebox\n{timebox}\n\n"
-        f"## Findings"
-    )
+    return dedent(f"""\
+        ## Parent Story
+        [[{story_id}]]
+
+        ## Question
+        {question}
+
+        ## Timebox
+        {timebox}
+
+        ## Findings""")

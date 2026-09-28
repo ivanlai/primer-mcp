@@ -427,13 +427,19 @@ def list_actionable(project_dir: Path) -> list[str]:
 
     # --- Urgent gates ---
     completed = sorted(
-        (t for t in scope.values() if isinstance(t, Task) and t.status == "completed"),
+        (t for t in scope.values() if isinstance(t, Task) and t.status in ("completed", "done")),
         key=lambda t: sort_key(t.id),
     )
     if completed:
         lines.append(f"**Urgent:** {len(completed)} task(s) completed but not verified")
         for t in completed:
-            lines.append(f"  - {t.id} ({t.title})")
+            # "done" only comes from a hand edit; read it as completed and say so.
+            note = (
+                " — marked 'done': assume completed unless the user says it is verified"
+                if t.status == "done"
+                else ""
+            )
+            lines.append(f"  - {t.id} ({t.title}){note}")
         lines.append("")
 
     started = sorted(

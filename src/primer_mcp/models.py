@@ -119,7 +119,9 @@ class Task(TicketBase):
     type: Literal["task"] = "task"
     id: str = Field(pattern=_id_pattern("task"))
     # Two-phase completion: complete_task sets "completed", verify_task sets "verified".
-    status: Literal["todo", "in-progress", "blocked", "completed", "verified"] = "todo"
+    # "done" is never written by the tools; a hand edit is read as "completed"
+    # (still awaiting verification) rather than breaking the store.
+    status: Literal["todo", "in-progress", "blocked", "completed", "verified", "done"] = "todo"
     story_id: str = Field(pattern=_id_pattern("story"))
     testable_outcome: str
     completed_notes: str = ""

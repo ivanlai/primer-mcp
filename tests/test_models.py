@@ -52,10 +52,6 @@ class TestPerTypeStatus:
         for status in ("todo", "in-progress", "blocked", "completed", "verified"):
             assert Task(**valid_kwargs(Task), status=status).status == status
 
-    def test_task_rejects_done(self) -> None:
-        with pytest.raises(ValidationError):
-            Task(**valid_kwargs(Task), status="done")
-
     def test_epic_rejects_verified(self) -> None:
         with pytest.raises(ValidationError):
             Epic(**valid_kwargs(Epic), status="verified")

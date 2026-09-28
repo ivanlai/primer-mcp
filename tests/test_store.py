@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from primer_mcp.errors import GateError
-from primer_mcp.graph import find_path
+from primer_mcp.graph import derive_status, find_path, load_tickets
 from primer_mcp.project import init_project
 from primer_mcp.storage import dumps_ticket, loads_ticket
 from primer_mcp.store import (
@@ -553,6 +553,26 @@ class TestStatusDrift:
         update_ticket(project, "ST-001", status="done")
         ticket, _ = loads_ticket(find_path(project, "ST-001").read_text())
         assert ticket.status == "done"
+
+
+class TestHandEditedTaskDone:
+    """
+    Tasks never get "done" from the tools; a hand edit is read as completed.
+    """
+
+    def test_is_surfaced_as_assumed_completed(self, project: Path) -> None:
+        force_status(project, "TK-001", "done")
+        lines = list_actionable(project)
+        assert any("TK-001" in line and "assume completed" in line for line in lines)
+
+    def test_does_not_finish_the_story(self, project: Path) -> None:
+        # Terminal for a task is "verified"; reading "done" as finished would
+        # close the story and epic without any verification evidence.
+        start_task(project, "TK-002")
+        complete_task(project, "TK-002", "n")
+        verify_task(project, "TK-002", "e")
+        force_status(project, "TK-001", "done")
+        assert derive_status(load_tickets(project), "ST-001") is None
 
 
 class TestOptionsTable:

@@ -66,7 +66,8 @@ def _update_section(body: str, heading: str, content: str) -> str:
     next_heading = body.find("\n## ", start)
     if next_heading == -1:
         return body[:start] + "\n" + content
-    return body[:start] + "\n" + content + body[next_heading:]
+    # body[next_heading:] starts with one newline; add the blank line before it.
+    return body[:start] + "\n" + content.rstrip("\n") + "\n" + body[next_heading:]
 
 
 def plan_epic(

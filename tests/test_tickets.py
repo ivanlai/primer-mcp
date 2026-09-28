@@ -10,6 +10,7 @@ import pytest
 from primer_mcp.graph import find_path
 from primer_mcp.models import Adr, Epic, Spike, Story, Task
 from primer_mcp.storage import dumps_ticket, loads_ticket
+from primer_mcp.templates import adr_body, epic_body, spike_body, story_body, task_body
 from primer_mcp.tickets import (
     GateError,
     _update_section,
@@ -761,3 +762,24 @@ class TestDerivedStatusCascade:
         create_task(project, story_id, "Second", what_to_do="w", testable_outcome="o")
         self.finish(project, first)
         assert status_of(project, story_id) == "todo"
+
+
+MULTI = ["first", "second"]
+TWO_LINES = "line one\nline two"
+
+MULTI_LINE_BODIES = {
+    "epic": lambda: epic_body(TWO_LINES, MULTI, MULTI, MULTI, MULTI),
+    "adr": lambda: adr_body("EP-001", TWO_LINES, TWO_LINES, MULTI, TWO_LINES),
+    "story": lambda: story_body("EP-001", TWO_LINES, MULTI, MULTI, ["ADR-001", "ADR-002"]),
+    "task": lambda: task_body("ST-001", TWO_LINES, TWO_LINES),
+    "spike": lambda: spike_body("ST-001", TWO_LINES, "1 hour"),
+}
+
+
+@pytest.mark.parametrize("ticket_type", MULTI_LINE_BODIES)
+def test_multi_line_values_leave_the_body_flush_left(ticket_type: str) -> None:
+    # Indented lines render as code blocks in Markdown; single-line values
+    # hid this once (0.1.5), so every list and free-text field spans lines here.
+    body = MULTI_LINE_BODIES[ticket_type]()
+    indented = [line for line in body.splitlines() if line[:1].isspace()]
+    assert indented == []

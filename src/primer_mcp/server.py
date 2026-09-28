@@ -308,11 +308,17 @@ def create_server(project_dir: Path) -> MCPServer:
     ) -> str:
         """
         Amend a ticket after creation; anything left out is left alone.
-        status sets todo, in-progress or blocked — for finished states,
-        prefer complete_task, verify_task or complete_spike as they also
-        record notes. blocked_by replaces the dependency list and is
-        refused if a referenced ticket does not exist or the edge would
-        create a cycle. To say "A blocks B", set blocked_by on B.
+
+        status — which values each type accepts:
+        - Epic, story, spike: todo, in-progress, blocked, done.
+        - Task: todo, in-progress, blocked. Finish with complete_task then
+          verify_task.
+        - ADR: none — it records a decision and has no lifecycle.
+
+        blocked_by replaces the dependency list. It is refused if a
+        referenced ticket does not exist or the edge would create a cycle.
+        To say "A blocks B", set blocked_by on B.
+
         body_sections replaces whole markdown sections by heading.
         """
 

@@ -21,8 +21,8 @@ from typing import Any
 
 from mcp.server.mcpserver import MCPServer
 
+from primer_mcp import __version__, project, store, tickets
 from primer_mcp import export as export_mod
-from primer_mcp import project, store, tickets
 from primer_mcp.errors import GateError
 
 INSTRUCTIONS = """\
@@ -51,7 +51,7 @@ def _call(fn: Callable[..., list[str]], *args: Any) -> str:
 def create_server(project_dir: Path) -> MCPServer:
     server = MCPServer(
         name="primer-mcp",
-        version="0.1.0",
+        version=__version__,
         instructions=INSTRUCTIONS,
     )
 

@@ -2,4 +2,7 @@
 primer-mcp: a Jira-lite MCP server enforcing planning-first workflows.
 """
 
-__version__ = "0.1.0"
+from importlib.metadata import version
+
+# pyproject.toml is the one place a release bumps the version.
+__version__ = version("primer-mcp")

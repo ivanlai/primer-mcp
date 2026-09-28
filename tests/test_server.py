@@ -2,6 +2,7 @@
 MCP integration: tools and prompts registered and callable via the in-memory client.
 """
 
+import tomllib
 from pathlib import Path
 
 import anyio
@@ -60,6 +61,16 @@ class TestRegistration:
                 result = await client.list_tools()
                 for tool in result.tools:
                     assert tool.description, f"{tool.name} has no description"
+
+        anyio.run(_test)
+
+    def test_handshake_reports_the_pyproject_version(self, tmp_path: Path) -> None:
+        # A hardcoded version drifted to 0.1.0 while releases moved on.
+        pyproject = tomllib.loads((Path(__file__).parents[1] / "pyproject.toml").read_text())
+
+        async def _test() -> None:
+            async with Client(create_server(tmp_path)) as client:
+                assert client.server_info.version == pyproject["project"]["version"]
 
         anyio.run(_test)
 

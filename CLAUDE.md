@@ -1,6 +1,6 @@
 # primer-mcp
 
-A Jira-lite MCP server that enforces planning-first workflows for AI-assisted development. Tickets are markdown files on the user's local disk. The AI agent is the interface.
+A Jira-lite MCP server that guides planning-first workflows for AI-assisted development. Tickets are markdown files on the user's local disk. The AI agent is the interface.
 
 ## Key conventions
 
@@ -11,7 +11,7 @@ A Jira-lite MCP server that enforces planning-first workflows for AI-assisted de
 - **Graph edges**: `blocked_by` is a base field on ALL ticket types, not just tasks. It is the only stored edge — "A blocks B" is recorded on B (ADR-004)
 - **Two-phase completion:** `complete_task` then `verify_task` — do not collapse into one step
 
-## Workflow gates (enforced by the server — never bypass)
+## Parent checks (the server refuses these)
 
 1. Cannot create an ADR without a valid parent Epic
 2. Cannot create a Task without a valid parent Story

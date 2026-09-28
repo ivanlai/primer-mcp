@@ -4,6 +4,7 @@ Read and update tools: listing, retrieval, and the gates on update_ticket.
 
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -610,3 +611,104 @@ class TestOptionsTable:
         answer = next_action(project)
         assert "Actionable:" in answer
         assert "ST-002" in answer and "ST-003" in answer
+
+
+def front_and_body(project: Path, ticket_id: str) -> tuple[Any, str]:
+    return loads_ticket(find_path(project, ticket_id).read_text())
+
+
+class TestMirroredSections:
+    """
+    A body section and its frontmatter copy change together (TK-056).
+    """
+
+    def test_testable_outcome_syncs_to_frontmatter(self, project: Path) -> None:
+        # list_actionable reads the frontmatter copy, so a stale one misleads.
+        update_ticket(project, "TK-001", body_sections={"Testable Outcome": "Returns 404"})
+        ticket, _ = front_and_body(project, "TK-001")
+        assert ticket.testable_outcome == "Returns 404"
+        assert "Returns 404" in next_action(project)
+
+    def test_bullet_list_syncs_to_frontmatter(self, project: Path) -> None:
+        update_ticket(project, "ST-001", body_sections={"Acceptance Criteria": "- Adds\n- Rejects"})
+        ticket, _ = front_and_body(project, "ST-001")
+        assert ticket.acceptance_criteria == ["Adds", "Rejects"]
+
+    def test_none_bullet_clears_the_list(self, project: Path) -> None:
+        update_ticket(project, "ST-001", body_sections={"Acceptance Criteria": "- a"})
+        assert front_and_body(project, "ST-001")[0].acceptance_criteria == ["a"]
+        update_ticket(project, "ST-001", body_sections={"Acceptance Criteria": "- (none)"})
+        ticket, _ = front_and_body(project, "ST-001")
+        assert ticket.acceptance_criteria == []
+
+    def test_prose_list_updates_body_and_warns(self, project: Path) -> None:
+        # Prose cannot be split into items reliably: never guess, say so.
+        update_ticket(project, "ST-001", body_sections={"Acceptance Criteria": "- keep me"})
+        result = update_ticket(
+            project, "ST-001", body_sections={"Acceptance Criteria": "Same as ST-002"}
+        )
+        ticket, body = front_and_body(project, "ST-001")
+        assert "Same as ST-002" in body
+        assert ticket.acceptance_criteria == ["keep me"]
+        assert any("bullets" in line for line in result)
+
+    def test_completion_notes_are_not_mirrored(self, project: Path) -> None:
+        # By design the frontmatter keeps a one-liner and the body the full summary.
+        start_task(project, "TK-001")
+        complete_task(project, "TK-001", "one-liner")
+        update_ticket(project, "TK-001", body_sections={"Completion Notes": "Full\nsummary"})
+        ticket, _ = front_and_body(project, "TK-001")
+        assert ticket.completed_notes == "one-liner"
+
+    def test_blocked_by_renders_dependencies(self, project: Path) -> None:
+        update_ticket(project, "TK-002", blocked_by=["TK-001"])
+        _, body = front_and_body(project, "TK-002")
+        assert "## Dependencies\n- [[TK-001]]" in body
+        update_ticket(project, "TK-002", blocked_by=[])
+        _, body = front_and_body(project, "TK-002")
+        assert "## Dependencies\n- (none)" in body
+
+    def test_dependencies_section_sets_blocked_by(self, project: Path) -> None:
+        update_ticket(project, "TK-002", body_sections={"Dependencies": "- [[TK-001]]"})
+        ticket, _ = front_and_body(project, "TK-002")
+        assert ticket.blocked_by == ["TK-001"]
+
+    def test_dependencies_section_goes_through_the_edge_checks(self, project: Path) -> None:
+        with pytest.raises(GateError, match="TK-404"):
+            update_ticket(project, "TK-002", body_sections={"Dependencies": "- [[TK-404]]"})
+
+    def test_sweep_rewrites_dependencies(self, project: Path) -> None:
+        update_ticket(project, "TK-002", blocked_by=["TK-001"])
+        assert "- [[TK-001]]" in front_and_body(project, "TK-002")[1]
+        delete_ticket(project, "TK-001")
+        sweep_blocked_by(project)
+        _, body = front_and_body(project, "TK-002")
+        assert "## Dependencies\n- (none)" in body
+
+
+def _headings_have_a_blank_line_before(body: str) -> bool:
+    lines = body.splitlines()
+    return all(lines[i - 1] == "" for i, line in enumerate(lines) if line.startswith("## ") and i)
+
+
+class TestSectionSpacing:
+    """
+    Every caller of the section update keeps one blank line before the next heading.
+    """
+
+    def test_update_ticket(self, project: Path) -> None:
+        update_ticket(project, "TK-001", body_sections={"What to do": "Changed"})
+        assert _headings_have_a_blank_line_before(front_and_body(project, "TK-001")[1])
+
+    def test_complete_and_verify_task(self, project: Path) -> None:
+        start_task(project, "TK-001")
+        complete_task(project, "TK-001", "notes")
+        assert _headings_have_a_blank_line_before(front_and_body(project, "TK-001")[1])
+        verify_task(project, "TK-001", "evidence")
+        assert _headings_have_a_blank_line_before(front_and_body(project, "TK-001")[1])
+
+    def test_complete_spike(self, project: Path) -> None:
+        spike_id = _id(create_spike(project, "ST-001", "S", question="?", timebox="1h"))
+        update_ticket(project, spike_id, body_sections={"Question": "Why?"})
+        complete_spike(project, spike_id, "found it")
+        assert _headings_have_a_blank_line_before(front_and_body(project, spike_id)[1])

@@ -32,6 +32,44 @@ SETTABLE_STATUS = ("todo", "in-progress", "blocked", "done")
 
 _TYPE_ORDER = {ticket_type: i for i, ticket_type in enumerate(SUBDIR_FOR_TYPE)}
 
+# Body sections that repeat a frontmatter field; update_ticket keeps each pair
+# in step. Completion notes, evidence and findings are left out on purpose:
+# the frontmatter holds the one-liner, the body the full account.
+_MIRRORED = {
+    ("epic", "Goals"): "goals",
+    ("epic", "Constraints"): "constraints",
+    ("epic", "Non-Goals"): "non_goals",
+    ("epic", "Success Criteria"): "success_criteria",
+    ("adr", "Context"): "context",
+    ("adr", "Decision"): "decision",
+    ("adr", "Alternatives Considered"): "alternatives",
+    ("adr", "Consequences"): "consequences",
+    ("story", "Acceptance Criteria"): "acceptance_criteria",
+    ("story", "Definition of Done"): "definition_of_done",
+    ("task", "Testable Outcome"): "testable_outcome",
+    ("spike", "Question"): "question",
+    ("spike", "Timebox"): "timebox",
+}
+
+
+def _bullet_items(content: str) -> list[str] | None:
+    # Read a list back from the "- item" lines the templates write. None when
+    # the section holds anything else: prose cannot be split reliably.
+    lines = [line.strip() for line in content.splitlines() if line.strip()]
+    if not all(line.startswith("- ") for line in lines):
+        return None
+    items = [line[2:].strip() for line in lines]
+    return [] if items in (["(none)"], ["(none considered)"]) else items
+
+
+def _with_dependencies(body: str, blocked_by: list[str]) -> str:
+    # Epics, ADRs and spikes have no Dependencies section; nothing to render.
+    rendered = "\n".join(f"- [[{ref}]]" for ref in blocked_by) or "- (none)"
+    try:
+        return _update_section(body, "Dependencies", rendered)
+    except ValueError:
+        return body
+
 
 def _ordered(tickets: list[Ticket]) -> list[Ticket]:
     # Hierarchy order first (epic, adr, story, task, spike), then by ID.
@@ -181,6 +219,38 @@ def update_ticket(
     reported: list[str] = []
     nudges: list[str] = []
 
+    # Body first, so each edited section can update its frontmatter copy and
+    # an explicit blocked_by below still renders the final Dependencies.
+    if body_sections is not None:
+        body = _apply_sections(body, body_sections, ticket_id)
+        reported.append(f"sections: {', '.join(body_sections)}")
+        for heading, content in body_sections.items():
+            if heading == "Dependencies" and blocked_by is None:
+                refs = _bullet_items(content)
+                if refs is None:
+                    nudges.append(
+                        "Note: blocked_by was not changed — write '## Dependencies' as "
+                        "'- [[ID]]' bullets, or pass blocked_by, to keep both copies in step."
+                    )
+                else:
+                    blocked_by = [ref.strip("[]") for ref in refs]
+                continue
+            field = _MIRRORED.get((ticket.type, heading))
+            if field is None:
+                continue
+            if isinstance(getattr(ticket, field), list):
+                items = _bullet_items(content)
+                if items is None:
+                    nudges.append(
+                        f"Note: frontmatter {field} was not changed — write '## {heading}' "
+                        "as '- item' bullets to keep both copies in step."
+                    )
+                    continue
+                changes[field] = items
+            else:
+                changes[field] = content.strip()
+            reported.append(f"{field}: synced from '## {heading}'")
+
     if status is not None:
         nudge = _check_status(ticket, status)
         if nudge:
@@ -191,15 +261,12 @@ def update_ticket(
     if blocked_by is not None:
         _check_edges(tickets, ticket, blocked_by)
         changes["blocked_by"] = blocked_by
+        body = _with_dependencies(body, blocked_by)
         reported.append(f"blocked_by: {', '.join(blocked_by) or '(none)'}")
 
     if external_ref is not None:
         changes["external_ref"] = external_ref
         reported.append(f"external_ref: {external_ref or '(cleared)'}")
-
-    if body_sections is not None:
-        body = _apply_sections(body, body_sections, ticket_id)
-        reported.append(f"sections: {', '.join(body_sections)}")
 
     changes["updated"] = datetime.now(tz=UTC).date()
     path.write_text(dumps_ticket(ticket.model_copy(update=changes), body), encoding="utf-8")
@@ -256,6 +323,7 @@ def sweep_blocked_by(project_dir: Path) -> list[str]:
         path = find_path(project_dir, ticket.id)
         _, body = loads_ticket(path.read_text(encoding="utf-8"))
         updated = ticket.model_copy(update={"blocked_by": new_blocked_by})
+        body = _with_dependencies(body, new_blocked_by)
         path.write_text(dumps_ticket(updated, body), encoding="utf-8")
         cleaned.append(f"  {ticket.id}: removed {', '.join(dangling)}")
 

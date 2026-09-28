@@ -59,8 +59,8 @@ def create_server(project_dir: Path) -> MCPServer:
     def init_project(project_name: str, jira_project_key: str | None = None) -> str:
         """
         Initialise this project for primer-mcp: creates the primer/ ticket
-        store and adds the workflow section to CLAUDE.md (and AGENTS.md if
-        it exists). Non-destructive and idempotent. Call this once per
+        store and adds the workflow section to CLAUDE.md and AGENTS.md,
+        creating them if needed. Non-destructive and idempotent. Call this once per
         project, before any other tool.
         Optionally pass jira_project_key if tickets may later be exported to Jira.
         """
@@ -424,8 +424,8 @@ def create_server(project_dir: Path) -> MCPServer:
     )
     def export_jira(epic_id: str | None = None) -> str:
         scope = (
-            f"Start by listing tickets under epic {epic_id}:"
-            f" list_tickets() and filter to that epic."
+            f"Start by listing the stories under epic {epic_id}:"
+            f' list_tickets(parent_id="{epic_id}"), then each story\'s tasks and spikes.'
             if epic_id
             else "Start by listing all tickets: list_tickets()."
         )
@@ -506,14 +506,14 @@ def create_server(project_dir: Path) -> MCPServer:
             | Task / Sub-task | Task (create_task) |
             | Spike / Task labelled `spike` | Spike (create_spike) |
 
-            ## Creation order (gate order)
+            ## Creation order
 
-            primer-mcp enforces a strict hierarchy. Create in this order:
+            Parents must exist before their children. Create in this order:
 
             1. **Epic** — call plan_epic with the Jira epic's fields.
-            2. **ADR** — call record_adr under the epic. If the Jira epic
-               has no ADR equivalent, create a placeholder noting the
-               import.
+            2. **ADRs** — call record_adr under the epic for each decision
+               record (issue labelled `adr` or linked Confluence page).
+               Skip this step if there are none.
             3. **Stories** — call create_story for each Jira story.
             4. **Tasks and spikes** — call create_task or create_spike
                under the appropriate story.

@@ -2,8 +2,8 @@
 Ticket creation: business logic for the planning tools.
 
 No MCP imports here — this layer is tested directly (tmp_path) and the
-server registers thin wrappers around it. Body templates follow
-docs/architecture.md exactly.
+server registers thin wrappers around it. Body templates come from
+templates.py.
 """
 
 from __future__ import annotations
@@ -111,8 +111,8 @@ def plan_epic(
         *init_lines,
         f"Created {epic_id}: {title} ({path})",
         (
-            f"Next: record at least one architectural decision with "
-            f'record_adr(epic_id="{epic_id}", ...) — stories are gated on it.'
+            f'Next: record key decisions with record_adr(epic_id="{epic_id}", ...), '
+            "or create stories directly if the decisions are straightforward."
         ),
     ]
 

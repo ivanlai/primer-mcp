@@ -26,7 +26,8 @@ from primer_mcp.project import SUBDIR_FOR_TYPE
 from primer_mcp.storage import dumps_ticket, loads_ticket
 from primer_mcp.tickets import _update_section
 
-# Statuses update_ticket may set. The terminal ones are reached through the
+# Statuses update_ticket may set. A task's completed and verified come from
+# complete_task and verify_task instead.
 SETTABLE_STATUS = ("todo", "in-progress", "blocked", "done")
 
 _TYPE_ORDER = {ticket_type: i for i, ticket_type in enumerate(SUBDIR_FOR_TYPE)}
@@ -335,7 +336,7 @@ def list_actionable(project_dir: Path) -> list[str]:
         return _answer(
             "No ticket store here yet — nothing is being tracked.",
             'init_project(project_name="...") creates primer/ and adds the workflow '
-            "section to CLAUDE.md (and AGENTS.md if it exists).",
+            "section to CLAUDE.md and AGENTS.md, creating them if needed.",
         )
 
     graph = dependency_graph(tickets)

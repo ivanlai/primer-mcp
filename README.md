@@ -2,6 +2,9 @@
 
 # primer-mcp
 
+[![CI](https://github.com/ivanlai/primer-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/ivanlai/primer-mcp/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/primer-mcp)](https://pypi.org/project/primer-mcp/)
+
 > **Beta** — the core workflow is stable and tested, but the tool is new. Expect rough edges.
 
 A Jira-lite MCP server that guides planning-first workflows for AI-assisted development — tickets as markdown files, your AI agent as the interface.

@@ -1,15 +1,15 @@
 """
 The dependency graph and derived status over the ticket store.
 
-Imports only errors, models, project and storage — never tickets or query —
-so tickets.py can call the cascade and query.py can import both without a
+Imports only errors, models, project and storage — never tickets or store —
+so tickets.py can call the cascade and store.py can import both without a
 cycle.
 
 Only dependency edges live in the graph. Hierarchy (epic -> story -> task)
 is a plain lookup over the loaded tickets; nothing here needs it in a
 DiGraph, and cycle detection must run on dependency edges alone: a child
 story blocking its parent epic is a cycle in the combined graph but is
-semantically fine (docs/architecture.md).
+semantically fine.
 """
 
 from __future__ import annotations

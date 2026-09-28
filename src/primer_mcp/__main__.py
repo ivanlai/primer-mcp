@@ -13,7 +13,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         prog="primer-mcp",
         description=(
-            "A Jira-lite MCP server that enforces planning-first workflows "
+            "A Jira-lite MCP server that guides planning-first workflows "
             "for AI-assisted development. Tickets are markdown files in a "
             "primer/ directory; the AI agent is the interface."
         ),

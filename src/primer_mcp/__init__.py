@@ -1,5 +1,5 @@
 """
-primer-mcp: a Jira-lite MCP server enforcing planning-first workflows.
+primer-mcp: a Jira-lite MCP server guiding planning-first workflows.
 """
 
 from importlib.metadata import version

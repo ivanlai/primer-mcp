@@ -1,9 +1,8 @@
 """
 Pydantic models for all primer-mcp ticket types.
 
-The schema and per-type status sets are defined in docs/architecture.md
-(see "Ticket Schema" and "Ticket Lifecycle"). Frontmatter carries the
-machine-readable data validated here; the markdown body is free-form.
+Frontmatter carries the machine-readable data validated here, including
+the per-type status sets; the markdown body is free-form.
 """
 
 from __future__ import annotations

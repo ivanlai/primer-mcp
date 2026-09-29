@@ -1,9 +1,9 @@
 """
 The dependency graph and derived status over the ticket store.
 
-Imports only errors, schema, project and ticket_format — never tickets or store —
-so tickets.py can call the cascade and store.py can import both without a
-cycle.
+Imports only errors, schema, project and ticket_format — never tickets or
+backlog_ops — so tickets.py can call the cascade and backlog_ops.py can
+import both without a cycle.
 
 Only dependency edges live in the graph. Hierarchy (epic -> story -> task)
 is a plain lookup over the loaded tickets; nothing here needs it in a

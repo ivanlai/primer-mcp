@@ -1,5 +1,17 @@
 """
-Ticket creation: business logic for the planning tools.
+Ticket creation and lifecycle: the workflow steps.
+
+- Creation: plan_epic, record_adr, create_story, create_task, create_spike.
+  Each allocates an ID, fills the body template and writes the file.
+- Lifecycle: start_task, complete_task, verify_task, complete_spike. Each
+  sets the status, records notes, evidence or findings, and nudges when a
+  step is skipped (ADR-008).
+- Creating or finishing a child calls graph.recompute_parents, which may
+  mark its story or epic done, or reopen it (ADR-002).
+
+Reads, general-purpose edits and clean-up live in backlog_ops.py. The
+split is not perfectly clean: backlog_ops.update_ticket can also set a
+status, and backlog_ops.py borrows _update_section from here.
 
 No MCP imports here — this layer is tested directly (tmp_path) and the
 server registers thin wrappers around it. Body templates come from

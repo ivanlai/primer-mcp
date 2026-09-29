@@ -3,13 +3,17 @@ MCP layer: registers the primer-mcp tools on an MCPServer.
 
 Thin by design — business logic lives in project.py, tickets.py and backlog_ops.py.
 
-Every docstring below is shipped to the model. MCPServer falls back to
-`fn.__doc__` for a tool's description, so these are the text an agent reads
-when deciding what to call: product copy, not developer notes. Rewording one
-changes how agents behave, so treat them as you would any user-facing string —
-and note the parameter schema is derived from the type hints, so signatures
-steer too. Gate errors are the same surface after the fact: what failed, why,
-and the exact next call.
+Every docstring below is shipped to the model:
+    MCPServer uses `fn.__doc__` as the tool's description.
+    It is the text an agent reads when deciding what to call.
+    So treat it as product copy, not developer notes.
+    Rewording one changes how agents behave.
+
+Signatures steer too:
+    The parameter schema the agent sees is derived from the type hints.
+
+Error messages are read by the model too, after a failed call:
+    Each GateError says what failed, why, and the exact next call to make.
 """
 
 from __future__ import annotations

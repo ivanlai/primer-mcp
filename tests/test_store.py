@@ -11,7 +11,6 @@ import pytest
 from primer_mcp.errors import GateError
 from primer_mcp.graph import derive_status, find_path, load_tickets
 from primer_mcp.project import init_project
-from primer_mcp.storage import dumps_ticket, loads_ticket
 from primer_mcp.store import (
     delete_ticket,
     get_ticket,
@@ -20,6 +19,7 @@ from primer_mcp.store import (
     sweep_blocked_by,
     update_ticket,
 )
+from primer_mcp.ticket_format import dumps_ticket, loads_ticket
 from primer_mcp.tickets import (
     complete_spike,
     complete_task,

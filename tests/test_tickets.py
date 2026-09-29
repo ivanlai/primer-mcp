@@ -9,8 +9,8 @@ import pytest
 
 from primer_mcp.graph import find_path
 from primer_mcp.models import Adr, Epic, Spike, Story, Task
-from primer_mcp.storage import dumps_ticket, loads_ticket
 from primer_mcp.templates import adr_body, epic_body, spike_body, story_body, task_body
+from primer_mcp.ticket_format import dumps_ticket, loads_ticket
 from primer_mcp.tickets import (
     GateError,
     _update_section,

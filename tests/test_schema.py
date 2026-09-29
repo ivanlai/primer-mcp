@@ -8,7 +8,7 @@ from typing import Any
 import pytest
 from pydantic import TypeAdapter, ValidationError
 
-from primer_mcp.models import Adr, Epic, Spike, Story, Task, Ticket
+from primer_mcp.schema import Adr, Epic, Spike, Story, Task, Ticket
 
 TICKET_ADAPTER: TypeAdapter[Ticket] = TypeAdapter(Ticket)
 

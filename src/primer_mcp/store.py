@@ -21,8 +21,8 @@ from primer_mcp.graph import (
     load_tickets,
     sort_key,
 )
-from primer_mcp.models import Adr, Epic, Spike, Story, Task, Ticket, TicketBase
 from primer_mcp.project import SUBDIR_FOR_TYPE
+from primer_mcp.schema import Adr, Epic, Spike, Story, Task, Ticket, TicketBase
 from primer_mcp.ticket_format import dumps_ticket, loads_ticket
 from primer_mcp.tickets import _update_section
 

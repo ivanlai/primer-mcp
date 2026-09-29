@@ -6,13 +6,13 @@ from pathlib import Path
 
 import yaml
 
-from primer_mcp.models import SCHEMA_VERSION
 from primer_mcp.project import (
     SNIPPET_HEADING,
     SUBDIRS,
     init_project,
     require_store,
 )
+from primer_mcp.schema import SCHEMA_VERSION
 
 
 def tree_snapshot(root: Path) -> dict[str, bytes]:

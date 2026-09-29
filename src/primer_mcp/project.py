@@ -13,7 +13,7 @@ from pathlib import Path
 import yaml
 
 from primer_mcp.errors import GateError
-from primer_mcp.models import SCHEMA_VERSION
+from primer_mcp.schema import SCHEMA_VERSION
 
 PRIMER_DIR = "primer"
 

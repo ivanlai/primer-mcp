@@ -12,7 +12,7 @@ import frontmatter
 import yaml
 from pydantic import TypeAdapter
 
-from primer_mcp.models import Ticket
+from primer_mcp.schema import Ticket
 
 _TICKET_ADAPTER: TypeAdapter[Ticket] = TypeAdapter(Ticket)
 

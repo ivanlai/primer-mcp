@@ -1,7 +1,7 @@
 """
 The dependency graph and derived status over the ticket store.
 
-Imports only errors, models, project and ticket_format — never tickets or store —
+Imports only errors, schema, project and ticket_format — never tickets or store —
 so tickets.py can call the cascade and store.py can import both without a
 cycle.
 
@@ -21,8 +21,8 @@ import networkx as nx
 from pydantic import ValidationError
 
 from primer_mcp.errors import GateError
-from primer_mcp.models import ID_PREFIX, Epic, Spike, Story, Task, Ticket
 from primer_mcp.project import SUBDIR_FOR_TYPE, require_store
+from primer_mcp.schema import ID_PREFIX, Epic, Spike, Story, Task, Ticket
 from primer_mcp.ticket_format import dumps_ticket, loads_ticket
 
 # The status at which a ticket stops holding up its parent.

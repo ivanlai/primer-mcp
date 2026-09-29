@@ -11,8 +11,8 @@ from typing import Any
 import pytest
 
 from primer_mcp.export import STATUS_BORDER, TYPE_COLOUR, export_graph
-from primer_mcp.models import Adr, Epic, Story, Task, Ticket
 from primer_mcp.project import SUBDIR_FOR_TYPE, init_project
+from primer_mcp.schema import Adr, Epic, Story, Task, Ticket
 from primer_mcp.ticket_format import dumps_ticket
 
 TODAY = date(2026, 1, 1)

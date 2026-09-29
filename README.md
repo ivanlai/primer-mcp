@@ -209,6 +209,10 @@ The `primer/` directory in this repo is the project's own backlog, created with 
 
 **It is project management, not part of the package.** The wheel ships `src/primer_mcp` only, and `primer/` is excluded from the distribution. Your own `primer/` is created automatically when you start planning.
 
+## Development
+
+[DEVELOPMENT.md](DEVELOPMENT.md) covers setting up a checkout, running the checks, pointing an MCP client at unreleased code, and how the code is put together — from a tool call arriving over MCP to the ticket file being written.
+
 ## License
 
 MIT

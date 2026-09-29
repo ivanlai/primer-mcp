@@ -194,6 +194,10 @@ and guide the workflow. Hand-edit where the tools fall short.
 
 primer-mcp tickets map directly to Jira concepts (Epic, Story, Task, ADR). When a project outgrows local markdown files, use the `export_jira` prompt with any Jira MCP server to push tickets to Jira. The `external_ref` field on each ticket tracks the Jira key, so re-exports update existing issues instead of creating duplicates. `import_jira` goes the other direction. Both prompts are experimental and have not been tested end-to-end.
 
+## Does it work?
+
+[primer-mcp-eval](https://github.com/ivanlai/primer-mcp-eval) tests whether primer-mcp changes how an AI coding agent works. It gives headless Claude Code the same 12 change requests with and without primer-mcp (72 isolated runs, scored from transcripts with no LLM judge). On features and open-ended requests, primer-mcp took a written plan before coding from 0 of 15 runs to 15 of 15. It changed little on bug fixes and refactors, and made no measurable difference to outcomes. The overhead was about 20 extra turns of tool calls per change, roughly constant from trivial edits to features, so it should be a smaller share of larger work (untested). The methodology and full results are in that repo.
+
 ## This repo dogfoods itself
 
 The `primer/` directory in this repo is the project's own backlog, created with the tools in `src/` and committed deliberately — a tool that tells you to commit your ticket store should commit its own. Browse it on GitHub to see what a real store looks like before installing:

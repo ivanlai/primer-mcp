@@ -8,7 +8,7 @@ import pytest
 from pydantic import ValidationError
 
 from primer_mcp.models import Adr, Epic, Spike, Story, Task, Ticket
-from primer_mcp.storage import dumps_ticket, loads_ticket
+from primer_mcp.ticket_format import dumps_ticket, loads_ticket
 
 DAY = date(2026, 8, 8)
 

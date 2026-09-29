@@ -18,8 +18,8 @@ from primer_mcp.errors import GateError
 from primer_mcp.graph import recompute_parents
 from primer_mcp.models import ID_PREFIX, Adr, Epic, Spike, Story, Task
 from primer_mcp.project import PRIMER_DIR, SUBDIR_FOR_TYPE, init_project, require_store
-from primer_mcp.storage import dumps_ticket, loads_ticket
 from primer_mcp.templates import adr_body, epic_body, spike_body, story_body, task_body
+from primer_mcp.ticket_format import dumps_ticket, loads_ticket
 
 
 def next_id(primer: Path, ticket_type: str) -> str:

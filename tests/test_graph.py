@@ -117,6 +117,21 @@ class TestLoadTickets:
         # The agent needs to know which file to fix, not just that one is broken.
         assert "TK-001.md" in str(exc.value)
 
+    def test_malformed_yaml_names_the_file_line_and_remedies(self, project: Path) -> None:
+        # A stray colon fails in the YAML parser, before schema validation.
+        # The raw parser error names a line but not the file, so the agent
+        # could not tell which of the tickets to fix.
+        write(project, task("TK-001"))
+        bad = store(project) / "tasks" / "TK-002.md"
+        bad.write_text("---\nid: TK-002\ntitle: a: b\n---\n", encoding="utf-8")
+        with pytest.raises(GateError) as exc:
+            load_tickets(project)
+        message = str(exc.value)
+        assert "TK-002.md" in message
+        assert "line 3" in message  # the line an editor shows for "title: a: b"
+        assert "Fix the syntax" in message
+        assert f"git checkout -- {bad}" in message
+
     def test_store_dir_instead_of_project_dir_is_rejected(self, project: Path) -> None:
         # Every entry point takes the project dir. Handing over the store
         # itself must fail loudly: returning {} would read as "no tickets

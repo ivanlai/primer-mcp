@@ -18,6 +18,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import networkx as nx
+import yaml
 from pydantic import ValidationError
 
 from primer_mcp.errors import GateError
@@ -83,6 +84,19 @@ def load_tickets(project_dir: Path) -> dict[str, Ticket]:
                     f"schema this primer-mcp expects. If it was edited by hand, "
                     f"restore it from version control (git checkout -- {path}). "
                     f"Details: {err}"
+                ) from err
+            except yaml.YAMLError as err:
+                # Fails before pydantic runs, so it needs its own message: the
+                # raw parser error names a line but not the file. The mark counts
+                # from the top of the file, so line + 1 is what an editor shows.
+                mark = getattr(err, "problem_mark", None)
+                where = f" at line {mark.line + 1}, column {mark.column + 1}" if mark else ""
+                problem = getattr(err, "problem", None) or "unparseable frontmatter"
+                raise GateError(
+                    f"Cannot read the ticket store: {path} is not valid YAML{where} "
+                    f"({problem}). Fix the syntax there, or restore the last committed "
+                    f"version with git checkout -- {path}, which discards any "
+                    f"uncommitted edits to that file."
                 ) from err
             tickets[ticket.id] = ticket
     return tickets

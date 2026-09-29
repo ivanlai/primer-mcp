@@ -2,19 +2,21 @@
 Backlog operations: everything that looks at or tidies the backlog as a
 whole, rather than moving one ticket through the workflow.
 
-- Reading: get_ticket (one ticket verbatim, plus the tickets it blocks,
-  derived from their blocked_by since that direction is never stored,
-  ADR-004) and list_tickets (one line per ticket, filtered).
-- What next: list_actionable, the largest part. It reports facts (epic
-  goals, story coverage, status drift, unverified or in-progress work, and
-  ready items in dependency order) and leaves the recommendation to the
-  model, steered by the tool description in server.py.
-- Amending: update_ticket changes status, blocked_by, body sections or
-  external_ref on any ticket. Everything is validated before anything is
-  written, and body sections that mirror a frontmatter field are kept in
-  step with it.
-- Tidying: delete_ticket (reports children rather than cascading) and
-  sweep_blocked_by (drops references to deleted tickets).
+- Reading:
+    get_ticket (one ticket verbatim, plus the tickets it blocks,
+    derived from their blocked_by since that direction is never stored, ADR-004)
+    and list_tickets (one line per ticket, filtered).
+- What next:
+    list_actionable, the largest part. It reports facts (epic goals, story coverage,
+    status drift, unverified or in-progress work, and ready items in dependency order)
+    and leaves the recommendation to the model, steered by the tool description in server.py.
+- Amending:
+    update_ticket changes status, blocked_by, body sections or external_ref on any ticket.
+    Everything is validated before anything is written, and body sections that mirror
+    a frontmatter field are kept in step with it.
+- Tidying:
+    delete_ticket (reports children rather than cascading) and
+    sweep_blocked_by (drops references to deleted tickets).
 
 Creation and the task lifecycle live in tickets.py. The split is not
 perfectly clean: update_ticket can also set a status, and _update_section

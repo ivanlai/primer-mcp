@@ -1,11 +1,13 @@
 """
 Ticket creation and lifecycle: the workflow steps.
 
-- Creation: plan_epic, record_adr, create_story, create_task, create_spike.
-  Each allocates an ID, fills the body template and writes the file.
-- Lifecycle: start_task, complete_task, verify_task, complete_spike. Each
-  sets the status, records notes, evidence or findings, and nudges when a
-  step is skipped (ADR-008).
+- Creation:
+    plan_epic, record_adr, create_story, create_task, create_spike.
+    Each allocates an ID, fills the body template and writes the file.
+- Lifecycle:
+    start_task, complete_task, verify_task, complete_spike.
+    Each sets the status, records notes, evidence or findings,
+    and nudges when a step is skipped (ADR-008).
 - Creating or finishing a child calls graph.recompute_parents, which may
   mark its story or epic done, or reopen it (ADR-002).
 

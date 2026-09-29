@@ -7,7 +7,7 @@ from datetime import date
 import pytest
 from pydantic import ValidationError
 
-from primer_mcp.models import Adr, Epic, Spike, Story, Task, Ticket
+from primer_mcp.schema import Adr, Epic, Spike, Story, Task, Ticket
 from primer_mcp.ticket_format import dumps_ticket, loads_ticket
 
 DAY = date(2026, 8, 8)
@@ -42,7 +42,7 @@ TICKETS: list[Ticket] = [
         story_id="ST-002",
         testable_outcome="pytest passes",
         status="completed",
-        completed_notes="Done in models.py",
+        completed_notes="Done in schema.py",
     ),
     Spike(
         id="SP-001",

@@ -18,8 +18,8 @@ from primer_mcp.graph import (
     recompute_parents,
     sort_key,
 )
-from primer_mcp.models import Adr, Epic, Spike, Story, Task, Ticket
 from primer_mcp.project import SUBDIR_FOR_TYPE
+from primer_mcp.schema import Adr, Epic, Spike, Story, Task, Ticket
 from primer_mcp.ticket_format import dumps_ticket
 
 TODAY = date(2026, 1, 1)

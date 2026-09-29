@@ -13,8 +13,8 @@ import json
 from pathlib import Path
 
 from primer_mcp.graph import dependency_graph, load_tickets
-from primer_mcp.models import Adr, Spike, Story, Task, Ticket
 from primer_mcp.project import require_store
+from primer_mcp.schema import Adr, Spike, Story, Task, Ticket
 from primer_mcp.ticket_format import loads_ticket
 
 TYPE_COLOUR = {

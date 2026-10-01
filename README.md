@@ -9,11 +9,20 @@
 
 A Jira-lite MCP server that guides planning-first workflows for AI-assisted development — tickets as markdown files, your AI agent as the interface.
 
-Does it work? [An eval of 72 runs](https://github.com/ivanlai/primer-mcp-eval) found it took planning-before-coding from 0/15 to 15/15 on features and open-ended requests — [details below](#does-it-work).
+Does it work? [An eval of 108 runs](https://github.com/ivanlai/primer-mcp-eval) found it took planning-before-coding from 0/15 to 15/15 on features and open-ended requests. But one line in CLAUDE.md got a saved plan too, so what primer-mcp adds is the structure of the record. [Details below](#does-it-work).
 
 ## Why
 
-Getting real value from AI coding agents takes more than prompting — it takes shaping what they build, engineering the workflow around them, and deploying something that holds up in practice. Left to their own devices, agents jump straight to implementation. Primer-mcp makes them plan first: state why the work matters, record decisions and weigh trade-offs, break it into stories and tasks, then complete and verify each one. The tickets are plain markdown with YAML frontmatter, committed alongside your code — no external service, no database, fully visible in your repo and conveniently browsable with tools like [Obsidian](https://obsidian.md).
+Getting real value from AI coding agents takes more than prompting. It takes shaping what they build, engineering the workflow around them, and deploying something that holds up in practice.
+
+Left to their own devices, agents jump straight to implementation. Primer-mcp makes them plan first:
+- state why the work matters
+- record decisions and weigh trade-offs
+- break the work into stories and tasks
+- check the plan with you before coding
+- complete and verify each one
+
+The tickets are plain markdown with YAML frontmatter, committed alongside your code. There's no external service and no database. Everything is visible in your repo and easy to browse with tools like [Obsidian](https://obsidian.md).
 
 primer-mcp is designed for solo developers and small projects — one person (and their AI agent) working through a backlog. It doesn't have assignment, notifications, or multi-user coordination, and that's deliberate: it's a lightweight complement to the AI workflow, not a replacement for Jira.
 
@@ -194,11 +203,36 @@ and guide the workflow. Hand-edit where the tools fall short.
 
 ## Graduating to Jira (experimental)
 
-primer-mcp tickets map directly to Jira concepts (Epic, Story, Task, ADR). When a project outgrows local markdown files, use the `export_jira` prompt with any Jira MCP server to push tickets to Jira. The `external_ref` field on each ticket tracks the Jira key, so re-exports update existing issues instead of creating duplicates. `import_jira` goes the other direction. Both prompts are experimental and have not been tested end-to-end.
+primer-mcp tickets map directly to Jira concepts (Epic, Story, Task, ADR). When a project outgrows local markdown files:
+- **`export_jira`** pushes tickets to Jira through any Jira MCP server. Each ticket's `external_ref` field tracks its Jira key, so re-exports update existing issues instead of creating duplicates.
+- **`import_jira`** goes the other direction.
+
+Both prompts are experimental and have not been tested end-to-end.
 
 ## Does it work?
 
-[primer-mcp-eval](https://github.com/ivanlai/primer-mcp-eval) tests whether primer-mcp changes how an AI coding agent works. It gives headless Claude Code the same 12 change requests with and without primer-mcp (72 isolated runs, scored from transcripts with no LLM judge). On features and open-ended requests, primer-mcp took a written plan before coding from 0 of 15 runs to 15 of 15. It changed little on bug fixes and refactors, and made no measurable difference to outcomes. Wherever the agent planned, the overhead was about 15–25 extra turns, growing with the number of tickets created rather than with the size of the code change, so it should be a smaller share of larger work (untested). The methodology and full results are in that repo.
+[primer-mcp-eval](https://github.com/ivanlai/primer-mcp-eval) tests whether primer-mcp changes how an AI coding agent works. It gives headless Claude Code the same 12 change requests three ways:
+- plain
+- with primer-mcp
+- with one line in CLAUDE.md asking for a plan saved in `docs/` before coding
+
+That's 108 isolated runs, scored from transcripts with no LLM judge.
+
+**What it found:**
+- **primer-mcp** took a written plan before coding from 0 of 15 runs to 15 of 15 on features and open-ended requests. It changed little on bug fixes and refactors, where its guidance lets the agent skip planning.
+- **The one-line instruction** got a saved plan on all 36 runs, for about 7% extra cost against primer-mcp's 50%.
+- **Outcomes:** none of the three made a measurable difference.
+
+So primer-mcp isn't needed to get a plan written. What it adds is the shape of the record, which the plan files lacked:
+- goals kept apart from implementation steps
+- decisions with the options that were rejected
+- a status for each piece of work
+
+Whether that structure pays off in later sessions is untested.
+
+**Overhead.** Wherever the agent planned with primer-mcp, it took about 15–25 extra turns. That grew with the number of tickets created, not with the size of the code change, so it should be a smaller share of larger work (untested).
+
+The methodology and full results are in that repo.
 
 ## This repo dogfoods itself
 
